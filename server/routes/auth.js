@@ -1,10 +1,10 @@
 
 const express = require('express');
+const router = express.Router();
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
-
-const router = express.Router();
 
 // @route   POST api/auth/register
 // @desc    Register a user
@@ -23,16 +23,21 @@ router.post('/register', async (req, res) => {
     user = new User({
       name,
       email,
-      password,
+      password
     });
 
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(password, salt);
+
+    // Save user to database
     await user.save();
 
     // Create JWT token
     const payload = {
       user: {
-        id: user.id,
-      },
+        id: user.id
+      }
     };
 
     jwt.sign(
@@ -41,7 +46,24 @@ router.post('/register', async (req, res) => {
       { expiresIn: '7d' },
       (err, token) => {
         if (err) throw err;
-        res.json({ token });
+        
+        // Set cookie
+        res.cookie('token', token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        });
+        
+        // Return user data (without password)
+        const userData = {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          avatar: user.avatar,
+          createdAt: user.createdAt
+        };
+        
+        res.json(userData);
       }
     );
   } catch (err) {
@@ -51,7 +73,7 @@ router.post('/register', async (req, res) => {
 });
 
 // @route   POST api/auth/login
-// @desc    Login user & get token
+// @desc    Authenticate user & get token
 // @access  Public
 router.post('/login', async (req, res) => {
   try {
@@ -64,7 +86,7 @@ router.post('/login', async (req, res) => {
     }
 
     // Check password
-    const isMatch = await user.comparePassword(password);
+    const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
@@ -72,8 +94,8 @@ router.post('/login', async (req, res) => {
     // Create JWT token
     const payload = {
       user: {
-        id: user.id,
-      },
+        id: user.id
+      }
     };
 
     jwt.sign(
@@ -82,7 +104,24 @@ router.post('/login', async (req, res) => {
       { expiresIn: '7d' },
       (err, token) => {
         if (err) throw err;
-        res.json({ token });
+        
+        // Set cookie
+        res.cookie('token', token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        });
+        
+        // Return user data (without password)
+        const userData = {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          avatar: user.avatar,
+          createdAt: user.createdAt
+        };
+        
+        res.json(userData);
       }
     );
   } catch (err) {
@@ -91,12 +130,23 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// @route   POST api/auth/logout
+// @desc    Logout user
+// @access  Private
+router.post('/logout', (req, res) => {
+  res.clearCookie('token');
+  res.json({ message: 'Logged out successfully' });
+});
+
 // @route   GET api/auth/me
 // @desc    Get current user
 // @access  Private
 router.get('/me', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
     res.json(user);
   } catch (err) {
     console.error(err.message);

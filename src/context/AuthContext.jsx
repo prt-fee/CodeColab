@@ -1,14 +1,8 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-// Initial mock user data
-const MOCK_USER = {
-  id: '1',
-  name: 'John Doe',
-  email: 'john@example.com',
-  avatar: 'https://randomuser.me/api/portraits/men/32.jpg'
-};
+import { authAPI } from '@/services/api';
+import { toast } from "@/hooks/use-toast";
 
 // Create the context
 const AuthContext = createContext(null);
@@ -21,32 +15,42 @@ export const AuthProvider = ({ children }) => {
 
   // Check if user is already logged in
   useEffect(() => {
-    const checkAuth = () => {
-      const storedUser = localStorage.getItem('projectify_user');
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
+    const checkAuth = async () => {
+      try {
+        setIsLoading(true);
+        const userData = await authAPI.getCurrentUser();
+        setUser(userData);
+      } catch (error) {
+        console.error('Auth check error:', error);
+        // Clear any stale user data
+        localStorage.removeItem('projectify_user');
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
-    checkAuth();
+    const storedUser = localStorage.getItem('projectify_user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+      checkAuth();
+    } else {
+      setIsLoading(false);
+    }
   }, []);
 
   // Login function
   const login = async (email, password) => {
     setIsLoading(true);
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // In a real app, you would validate credentials with your API
-      if (email && password) {
-        setUser(MOCK_USER);
-        localStorage.setItem('projectify_user', JSON.stringify(MOCK_USER));
-        navigate('/dashboard');
-      } else {
-        throw new Error('Invalid credentials');
-      }
+      const userData = await authAPI.login({ email, password });
+      setUser(userData);
+      localStorage.setItem('projectify_user', JSON.stringify(userData));
+      toast({
+        title: "Login Successful",
+        description: `Welcome back, ${userData.name}!`,
+      });
+      navigate('/dashboard');
+      return userData;
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -59,18 +63,15 @@ export const AuthProvider = ({ children }) => {
   const register = async (name, email, password) => {
     setIsLoading(true);
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // In a real app, you would register the user with your API
-      if (name && email && password) {
-        const newUser = { ...MOCK_USER, name, email };
-        setUser(newUser);
-        localStorage.setItem('projectify_user', JSON.stringify(newUser));
-        navigate('/dashboard');
-      } else {
-        throw new Error('Invalid registration data');
-      }
+      const userData = await authAPI.register({ name, email, password });
+      setUser(userData);
+      localStorage.setItem('projectify_user', JSON.stringify(userData));
+      toast({
+        title: "Registration Successful",
+        description: `Welcome to Projectify, ${userData.name}!`,
+      });
+      navigate('/dashboard');
+      return userData;
     } catch (error) {
       console.error('Registration error:', error);
       throw error;
@@ -80,10 +81,20 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Logout function
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('projectify_user');
-    navigate('/login');
+  const logout = async () => {
+    try {
+      await authAPI.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setUser(null);
+      localStorage.removeItem('projectify_user');
+      toast({
+        title: "Logged Out",
+        description: "You have been successfully logged out.",
+      });
+      navigate('/login');
+    }
   };
 
   return (
