@@ -1,5 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Loader2, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,6 @@ import { toast } from '@/hooks/use-toast';
 import NavBar from '@/components/NavBar';
 import { useTaskManager, Task } from '@/hooks/useTaskManager';
 
-// Mock project data 
 const mockProjects = [
   {
     id: '1',
@@ -53,12 +52,10 @@ const mockProjects = [
 ];
 
 const ProjectCard = ({ project }) => {
-  // Calculate project progress
   const progress = project.tasksCount.total > 0 
     ? Math.round((project.tasksCount.completed / project.tasksCount.total) * 100) 
     : 0;
 
-  // Format the due date
   const formatDate = (date) => {
     if (!date) return '';
     return new Intl.DateTimeFormat('en-US', { 
@@ -68,66 +65,66 @@ const ProjectCard = ({ project }) => {
   };
 
   return (
-    <div 
-      className="bg-white rounded-lg border shadow-sm p-5 cursor-pointer transition-all duration-200 hover:shadow-md hover:border-primary/30"
-    >
-      <div className="flex items-center gap-3 mb-3">
-        <div 
-          className={`w-10 h-10 rounded-md flex items-center justify-center bg-${project.color ? project.color : 'primary'}-100 text-${project.color ? project.color : 'primary'}-500`}
-        >
-          <Plus size={20} />
-        </div>
-        <div>
-          <h3 className="font-medium text-base">{project.title}</h3>
-          {project.dueDate && (
-            <p className="text-xs text-muted-foreground">
-              Due {formatDate(project.dueDate)}
-            </p>
-          )}
-        </div>
-      </div>
-      
-      {project.description && (
-        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-          {project.description}
-        </p>
-      )}
-      
-      <div className="mb-3">
-        <div className="flex justify-between items-center mb-1">
-          <span className="text-xs text-muted-foreground">Progress</span>
-          <span className="text-xs font-medium">{progress}%</span>
-        </div>
-        <div className="w-full bg-secondary rounded-full h-1.5">
+    <Link to={`/project/${project.id}`}>
+      <div 
+        className="bg-white rounded-lg border shadow-sm p-5 cursor-pointer transition-all duration-200 hover:shadow-md hover:border-primary/30"
+      >
+        <div className="flex items-center gap-3 mb-3">
           <div 
-            className="bg-primary h-1.5 rounded-full" 
-            style={{ width: `${progress}%` }}
-          ></div>
-        </div>
-      </div>
-      
-      <div className="flex items-center justify-between mt-4 text-muted-foreground text-xs">
-        <div className="flex items-center gap-1">
-          <span>{project.members} members</span>
+            className={`w-10 h-10 rounded-md flex items-center justify-center bg-${project.color ? project.color : 'primary'}-100 text-${project.color ? project.color : 'primary'}-500`}
+          >
+            <Plus size={20} />
+          </div>
+          <div>
+            <h3 className="font-medium text-base">{project.title}</h3>
+            {project.dueDate && (
+              <p className="text-xs text-muted-foreground">
+                Due {formatDate(project.dueDate)}
+              </p>
+            )}
+          </div>
         </div>
         
-        <div className="flex items-center gap-1">
-          <span>{project.tasksCount.completed}/{project.tasksCount.total} tasks</span>
+        {project.description && (
+          <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+            {project.description}
+          </p>
+        )}
+        
+        <div className="mb-3">
+          <div className="flex justify-between items-center mb-1">
+            <span className="text-xs text-muted-foreground">Progress</span>
+            <span className="text-xs font-medium">{progress}%</span>
+          </div>
+          <div className="w-full bg-secondary rounded-full h-1.5">
+            <div 
+              className="bg-primary h-1.5 rounded-full" 
+              style={{ width: `${progress}%` }}
+            ></div>
+          </div>
+        </div>
+        
+        <div className="flex items-center justify-between mt-4 text-muted-foreground text-xs">
+          <div className="flex items-center gap-1">
+            <span>{project.members} members</span>
+          </div>
+          
+          <div className="flex items-center gap-1">
+            <span>{project.tasksCount.completed}/{project.tasksCount.total} tasks</span>
+          </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 };
 
 const TaskCard = ({ task }) => {
-  // Priority colors
   const priorityColors = {
     low: 'bg-blue-100 text-blue-800',
     medium: 'bg-yellow-100 text-yellow-800',
     high: 'bg-red-100 text-red-800'
   };
 
-  // Format date
   const formatDate = (date) => {
     if (!date) return 'No due date';
     return new Intl.DateTimeFormat('en-US', { 
@@ -175,7 +172,6 @@ const Dashboard = () => {
   const { tasks } = useTaskManager();
 
   useEffect(() => {
-    // Simulate loading data
     const timer = setTimeout(() => {
       setProjects(mockProjects);
       setIsLoading(false);
