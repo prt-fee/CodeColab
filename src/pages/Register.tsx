@@ -1,180 +1,118 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useAuth } from '@/context/AuthContext';
-import { fadeInAnimation } from '@/lib/animations';
-import { useToast } from '@/hooks/use-toast';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { toast } from '@/hooks/use-toast';
 
-const Register: React.FC = () => {
+const Register = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { register, isAuthenticated } = useAuth();
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  
-  const formRef = useRef<HTMLDivElement>(null);
-  const logoRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/dashboard');
-    }
-    
-    // Animate the form
-    if (formRef.current) {
-      fadeInAnimation(formRef.current, 0.2, 0.6);
-    }
-    
-    if (logoRef.current) {
-      fadeInAnimation(logoRef.current, 0, 0.5);
-    }
-  }, [isAuthenticated, navigate]);
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const { register } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name || !email || !password) {
+    if (password !== confirmPassword) {
       toast({
-        title: "Error",
-        description: "Please fill in all fields",
-        variant: "destructive"
+        title: 'Passwords do not match',
+        description: 'Please make sure your passwords match.',
+        variant: 'destructive',
       });
       return;
     }
     
-    if (password.length < 8) {
-      toast({
-        title: "Password too short",
-        description: "Password must be at least 8 characters long",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    setIsSubmitting(true);
-    
+    setIsLoading(true);
+
     try {
       await register(name, email, password);
-      
-      toast({
-        title: "Account created",
-        description: "You've been successfully registered",
-      });
-      
-      navigate('/dashboard');
+      // Redirect is handled in the register function
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Registration failed';
       toast({
-        title: "Registration failed",
-        description: "An error occurred during registration",
-        variant: "destructive"
+        title: 'Registration Failed',
+        description: errorMessage,
+        variant: 'destructive',
       });
-      console.error('Registration error:', error);
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-8">
-        <div ref={logoRef} className="text-center opacity-0">
-          <Link to="/" className="inline-flex items-center gap-2 text-2xl font-bold">
-            <span className="text-primary text-3xl">●</span>
-            <span>Projectify</span>
-          </Link>
-          <h2 className="mt-6 text-2xl font-bold">Create an account</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Sign up to get started with Projectify
-          </p>
-        </div>
-        
-        <div 
-          ref={formRef} 
-          className="bg-white p-8 rounded-lg border shadow-sm space-y-6 opacity-0"
-        >
-          <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="min-h-screen flex items-center justify-center bg-muted/40 px-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
+          <CardDescription>
+            Enter your information to create an account
+          </CardDescription>
+        </CardHeader>
+        <form onSubmit={handleSubmit}>
+          <CardContent className="space-y-4">
             <div className="space-y-2">
-              <label htmlFor="name" className="text-sm font-medium">
-                Full Name
-              </label>
-              <Input
-                id="name"
-                type="text"
-                placeholder="John Doe"
+              <Label htmlFor="name">Full Name</Label>
+              <Input 
+                id="name" 
+                placeholder="John Doe" 
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
               />
             </div>
-            
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium">
-                Email
-              </label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="name@example.com"
+              <Label htmlFor="email">Email</Label>
+              <Input 
+                id="email" 
+                type="email" 
+                placeholder="name@example.com" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>
-            
             <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium">
-                Password
-              </label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
+              <Label htmlFor="password">Password</Label>
+              <Input 
+                id="password" 
+                type="password" 
+                placeholder="••••••••" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
-              <p className="text-xs text-muted-foreground">
-                Must be at least 8 characters
-              </p>
             </div>
-            
-            <Button 
-              type="submit" 
-              className="w-full font-medium" 
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? 'Creating account...' : 'Create account'}
-              {!isSubmitting && <ArrowRight size={16} className="ml-2" />}
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">Confirm Password</Label>
+              <Input 
+                id="confirm-password" 
+                type="password" 
+                placeholder="••••••••" 
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
+            </div>
+          </CardContent>
+          <CardFooter className="flex flex-col">
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? 'Creating account...' : 'Create Account'}
             </Button>
-          </form>
-          
-          <div className="text-xs text-center text-muted-foreground">
-            By creating an account, you agree to our{' '}
-            <Link to="/terms" className="text-primary hover:underline">
-              Terms of Service
-            </Link>{' '}
-            and{' '}
-            <Link to="/privacy" className="text-primary hover:underline">
-              Privacy Policy
-            </Link>
-          </div>
-        </div>
-        
-        <p className="text-sm text-center text-muted-foreground">
-          Already have an account?{' '}
-          <Link 
-            to="/login" 
-            className="text-primary hover:text-primary/90 font-medium transition-colors"
-          >
-            Sign in
-          </Link>
-        </p>
-      </div>
+            <div className="mt-4 text-center text-sm">
+              Already have an account?{' '}
+              <Link to="/login" className="text-primary hover:underline">
+                Sign in
+              </Link>
+            </div>
+          </CardFooter>
+        </form>
+      </Card>
     </div>
   );
 };

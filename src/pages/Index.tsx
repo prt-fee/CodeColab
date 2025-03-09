@@ -1,14 +1,14 @@
 
 import React, { useEffect } from 'react';
-import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
 import Hero from '@/components/Hero';
 import Features from '@/components/Features';
 import Testimonials from '@/components/Testimonials';
 import Footer from '@/components/Footer';
-import NavBar from '@/components/NavBar';
+import NavBar from '@/components/navbar';
 
-const Index: React.FC = () => {
+const Index = () => {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
