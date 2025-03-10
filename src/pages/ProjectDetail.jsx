@@ -2,13 +2,25 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { Loader2, Users, Calendar, PieChart, FilePlus, FolderPlus, Save, Code, BarChart } from 'lucide-react';
+import { Loader2, Users, Calendar, PieChart, FilePlus, FolderPlus, Save, Code, BarChart, Upload, GitBranch, GitPullRequest } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTaskManager } from '@/hooks/useTaskManager';
 import NavBar from '@/components/NavBar';
 import { toast } from '@/hooks/use-toast';
+import { Controlled as CodeMirror } from 'react-codemirror2';
+import 'codemirror/lib/codemirror.css';
+import 'codemirror/theme/material.css';
+import 'codemirror/theme/eclipse.css';
+import 'codemirror/mode/javascript/javascript';
+import 'codemirror/mode/htmlmixed/htmlmixed';
+import 'codemirror/mode/css/css';
+import 'codemirror/mode/markdown/markdown';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 
 // Mock project data (you would fetch this from your API)
 const mockProjects = [
@@ -37,6 +49,15 @@ const mockProjects = [
       { id: '1', title: 'Project Kickoff', date: new Date('2023-05-15T10:00:00'), duration: 60, attendees: ['John Doe', 'Jane Smith', 'Mike Johnson'] },
       { id: '2', title: 'Design Review', date: new Date('2023-05-22T14:00:00'), duration: 45, attendees: ['John Doe', 'Sarah Williams'] },
       { id: '3', title: 'Progress Update', date: new Date('2023-05-29T11:00:00'), duration: 30, attendees: ['John Doe', 'Jane Smith', 'Mike Johnson', 'Sarah Williams'] }
+    ],
+    commits: [
+      { id: '1', message: 'Initial commit', author: 'John Doe', date: new Date('2023-05-10T10:00:00') },
+      { id: '2', message: 'Add header styles', author: 'Jane Smith', date: new Date('2023-05-12T14:30:00') },
+      { id: '3', message: 'Fix navigation menu', author: 'Mike Johnson', date: new Date('2023-05-14T09:15:00') }
+    ],
+    pullRequests: [
+      { id: '1', title: 'Feature: Add contact form', author: 'Jane Smith', status: 'open', date: new Date('2023-05-14T15:20:00') },
+      { id: '2', title: 'Fix: Mobile responsive layout', author: 'Mike Johnson', status: 'merged', date: new Date('2023-05-13T11:45:00') }
     ]
   },
   {
@@ -60,6 +81,13 @@ const mockProjects = [
     meetings: [
       { id: '1', title: 'Sprint Planning', date: new Date('2023-05-16T09:00:00'), duration: 90, attendees: ['John Doe', 'Jane Smith'] },
       { id: '2', title: 'Client Demo', date: new Date('2023-05-30T15:00:00'), duration: 60, attendees: ['John Doe', 'Jane Smith'] }
+    ],
+    commits: [
+      { id: '1', message: 'Initial setup', author: 'John Doe', date: new Date('2023-05-08T10:00:00') },
+      { id: '2', message: 'Create app structure', author: 'Jane Smith', date: new Date('2023-05-10T14:30:00') }
+    ],
+    pullRequests: [
+      { id: '1', title: 'Feature: User authentication', author: 'John Doe', status: 'open', date: new Date('2023-05-12T15:20:00') }
     ]
   },
   {
@@ -83,12 +111,28 @@ const mockProjects = [
     ],
     meetings: [
       { id: '1', title: 'Campaign Strategy', date: new Date('2023-05-17T11:00:00'), duration: 60, attendees: ['Mike Johnson', 'Sarah Williams', 'Alex Brown'] }
-    ]
+    ],
+    commits: [
+      { id: '1', message: 'Add campaign overview', author: 'Mike Johnson', date: new Date('2023-05-09T11:00:00') },
+      { id: '2', message: 'Update budget details', author: 'Sarah Williams', date: new Date('2023-05-11T13:45:00') }
+    ],
+    pullRequests: []
   }
 ];
 
 const CodeEditor = ({ file, onSave }) => {
   const [content, setContent] = useState(file?.content || '');
+  const [theme, setTheme] = useState('eclipse');
+
+  const getLanguage = (fileType) => {
+    switch (fileType) {
+      case 'js': return 'javascript';
+      case 'css': return 'css';
+      case 'html': return 'htmlmixed';
+      case 'md': return 'markdown';
+      default: return 'javascript';
+    }
+  };
 
   const handleSave = () => {
     onSave(file.id, content);
@@ -102,16 +146,38 @@ const CodeEditor = ({ file, onSave }) => {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium">{file?.name}</h3>
-        <Button onClick={handleSave} size="sm">
-          <Save className="h-4 w-4 mr-2" />
-          Save
-        </Button>
+        <div className="flex gap-2">
+          <select 
+            className="px-2 py-1 text-sm border rounded"
+            value={theme}
+            onChange={(e) => setTheme(e.target.value)}
+          >
+            <option value="eclipse">Light Theme</option>
+            <option value="material">Dark Theme</option>
+          </select>
+          <Button onClick={handleSave} size="sm">
+            <Save className="h-4 w-4 mr-2" />
+            Save
+          </Button>
+        </div>
       </div>
       <div className="border rounded-md overflow-hidden">
-        <textarea
-          className="w-full h-64 p-4 font-mono text-sm bg-black text-white"
+        <CodeMirror
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          options={{
+            mode: getLanguage(file?.type),
+            theme: theme,
+            lineNumbers: true,
+            lineWrapping: true,
+            foldGutter: true,
+            gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
+            extraKeys: {"Ctrl-Space": "autocomplete"},
+            indentWithTabs: true,
+            indentUnit: 2,
+          }}
+          onBeforeChange={(editor, data, value) => {
+            setContent(value);
+          }}
         />
       </div>
     </div>
@@ -151,14 +217,86 @@ const MeetingItem = ({ meeting }) => {
   );
 };
 
+const CommitItem = ({ commit }) => {
+  const formatDate = (date) => {
+    if (!date) return '';
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric'
+    }).format(new Date(date));
+  };
+
+  return (
+    <div className="flex items-start p-3 border-b last:border-b-0">
+      <div className="flex-1">
+        <p className="font-medium break-all">{commit.message}</p>
+        <div className="flex items-center text-xs text-muted-foreground mt-1">
+          <span className="mr-3">{commit.author}</span>
+          <span>{formatDate(commit.date)}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const PullRequestItem = ({ pr }) => {
+  const formatDate = (date) => {
+    if (!date) return '';
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric'
+    }).format(new Date(date));
+  };
+
+  return (
+    <div className="flex items-start p-3 border-b last:border-b-0">
+      <div className="flex-1">
+        <p className="font-medium">{pr.title}</p>
+        <div className="flex items-center text-xs text-muted-foreground mt-1">
+          <span className="mr-3">by {pr.author}</span>
+          <span className={`px-2 py-0.5 rounded-full ${
+            pr.status === 'open' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+          }`}>
+            {pr.status}
+          </span>
+          <span className="ml-3">{formatDate(pr.date)}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const ProjectDetail = () => {
   const { id } = useParams();
   const { user } = useAuth();
-  const { tasks, getTasksByProject } = useTaskManager();
+  const { tasks, getTasksByProject, addTask } = useTaskManager();
   const [project, setProject] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedFile, setSelectedFile] = useState(null);
   const [projectTasks, setProjectTasks] = useState([]);
+  const [newFileName, setNewFileName] = useState('');
+  const [newFileType, setNewFileType] = useState('js');
+  const [newFileDialogOpen, setNewFileDialogOpen] = useState(false);
+  const [newMeetingDialogOpen, setNewMeetingDialogOpen] = useState(false);
+  const [newTaskDialogOpen, setNewTaskDialogOpen] = useState(false);
+  const [newCommitDialogOpen, setNewCommitDialogOpen] = useState(false);
+  const [commitMessage, setCommitMessage] = useState('');
+  const [newMeeting, setNewMeeting] = useState({
+    title: '',
+    date: new Date().toISOString().split('T')[0],
+    time: '10:00',
+    duration: 30,
+    attendees: []
+  });
+  const [newTask, setNewTask] = useState({
+    title: '',
+    description: '',
+    priority: 'medium',
+    dueDate: new Date().toISOString().split('T')[0],
+    status: 'todo'
+  });
 
   useEffect(() => {
     // Simulate loading data
@@ -173,7 +311,7 @@ const ProjectDetail = () => {
         setProjectTasks(filteredTasks);
       }
       setIsLoading(false);
-    }, 1000);
+    }, 800);
     
     return () => clearTimeout(timer);
   }, [id, tasks]);
@@ -190,11 +328,20 @@ const ProjectDetail = () => {
   };
 
   const handleAddFile = () => {
+    if (!newFileName.trim()) {
+      toast({
+        title: "Error",
+        description: "File name is required",
+        variant: "destructive"
+      });
+      return;
+    }
+
     const newFile = {
       id: Date.now().toString(),
-      name: `new-file-${project.files.length + 1}.txt`,
-      type: 'txt',
-      content: '// Add your code here'
+      name: newFileName,
+      type: newFileType,
+      content: ''
     };
     
     const updatedFiles = [...project.files, newFile];
@@ -203,6 +350,8 @@ const ProjectDetail = () => {
       files: updatedFiles
     });
     setSelectedFile(newFile);
+    setNewFileName('');
+    setNewFileDialogOpen(false);
     
     toast({
       title: "File created",
@@ -210,24 +359,120 @@ const ProjectDetail = () => {
     });
   };
 
-  const handleAddMeeting = () => {
-    const newMeeting = {
+  const handleAddCommit = () => {
+    if (!commitMessage.trim()) {
+      toast({
+        title: "Error",
+        description: "Commit message is required",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const newCommit = {
       id: Date.now().toString(),
-      title: 'New Meeting',
-      date: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
-      duration: 30,
+      message: commitMessage,
+      author: user?.name || 'Current User',
+      date: new Date()
+    };
+    
+    const updatedCommits = [newCommit, ...(project.commits || [])];
+    setProject({
+      ...project,
+      commits: updatedCommits
+    });
+    
+    setCommitMessage('');
+    setNewCommitDialogOpen(false);
+    
+    toast({
+      title: "Changes committed",
+      description: "Your changes have been committed successfully",
+    });
+  };
+
+  const handleAddMeeting = () => {
+    if (!newMeeting.title.trim()) {
+      toast({
+        title: "Error",
+        description: "Meeting title is required",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const dateTime = new Date(`${newMeeting.date}T${newMeeting.time}`);
+    
+    const newMeetingData = {
+      id: Date.now().toString(),
+      title: newMeeting.title,
+      date: dateTime,
+      duration: parseInt(newMeeting.duration),
       attendees: project.members.slice(0, 2).map(member => member.name)
     };
     
-    const updatedMeetings = [...project.meetings, newMeeting];
+    const updatedMeetings = [...project.meetings, newMeetingData];
     setProject({
       ...project,
       meetings: updatedMeetings
     });
+
+    setNewMeeting({
+      title: '',
+      date: new Date().toISOString().split('T')[0],
+      time: '10:00',
+      duration: 30,
+      attendees: []
+    });
+    
+    setNewMeetingDialogOpen(false);
     
     toast({
       title: "Meeting scheduled",
       description: `New meeting has been added to the calendar`,
+    });
+  };
+
+  const handleAddTask = () => {
+    if (!newTask.title.trim()) {
+      toast({
+        title: "Error",
+        description: "Task title is required",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const task = addTask({
+      ...newTask,
+      projectId: id,
+      dueDate: new Date(newTask.dueDate)
+    });
+    
+    setProjectTasks([...projectTasks, task]);
+    
+    // Update project task count
+    setProject({
+      ...project,
+      tasksCount: {
+        total: project.tasksCount.total + 1,
+        completed: project.tasksCount.completed
+      }
+    });
+    
+    setNewTask({
+      title: '',
+      description: '',
+      priority: 'medium',
+      dueDate: new Date().toISOString().split('T')[0],
+      status: 'todo'
+    });
+    
+    setNewTaskDialogOpen(false);
+    
+    toast({
+      title: "Task created",
+      description: "New task has been added to the project",
     });
   };
 
@@ -276,14 +521,106 @@ const ProjectDetail = () => {
             <p className="text-muted-foreground">{project.description}</p>
           </div>
           <div className="flex space-x-2">
-            <Button variant="outline" onClick={handleAddFile}>
-              <FilePlus className="h-4 w-4 mr-2" />
-              New File
-            </Button>
-            <Button onClick={handleAddMeeting}>
-              <Calendar className="h-4 w-4 mr-2" />
-              Schedule Meeting
-            </Button>
+            <Dialog open={newFileDialogOpen} onOpenChange={setNewFileDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <FilePlus className="h-4 w-4 mr-2" />
+                  New File
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create New File</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="filename">File Name</Label>
+                    <Input
+                      id="filename"
+                      value={newFileName}
+                      onChange={(e) => setNewFileName(e.target.value)}
+                      placeholder="Enter file name with extension (e.g. main.js)"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="filetype">File Type</Label>
+                    <select
+                      id="filetype"
+                      value={newFileType}
+                      onChange={(e) => setNewFileType(e.target.value)}
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                    >
+                      <option value="js">JavaScript (.js)</option>
+                      <option value="html">HTML (.html)</option>
+                      <option value="css">CSS (.css)</option>
+                      <option value="md">Markdown (.md)</option>
+                    </select>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button onClick={handleAddFile}>Create File</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={newMeetingDialogOpen} onOpenChange={setNewMeetingDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Schedule Meeting
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Schedule a Meeting</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="title">Meeting Title</Label>
+                    <Input
+                      id="title"
+                      value={newMeeting.title}
+                      onChange={(e) => setNewMeeting({...newMeeting, title: e.target.value})}
+                      placeholder="Enter meeting title"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="date">Date</Label>
+                      <Input
+                        id="date"
+                        type="date"
+                        value={newMeeting.date}
+                        onChange={(e) => setNewMeeting({...newMeeting, date: e.target.value})}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="time">Time</Label>
+                      <Input
+                        id="time"
+                        type="time"
+                        value={newMeeting.time}
+                        onChange={(e) => setNewMeeting({...newMeeting, time: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="duration">Duration (minutes)</Label>
+                    <Input
+                      id="duration"
+                      type="number"
+                      value={newMeeting.duration}
+                      onChange={(e) => setNewMeeting({...newMeeting, duration: e.target.value})}
+                      min="15"
+                      step="15"
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button onClick={handleAddMeeting}>Schedule Meeting</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
@@ -294,6 +631,8 @@ const ProjectDetail = () => {
             <TabsTrigger value="meetings">Meetings</TabsTrigger>
             <TabsTrigger value="stats">Statistics</TabsTrigger>
             <TabsTrigger value="team">Team</TabsTrigger>
+            <TabsTrigger value="commits">Commits</TabsTrigger>
+            <TabsTrigger value="pulls">Pull Requests</TabsTrigger>
           </TabsList>
           
           <TabsContent value="code" className="space-y-6">
@@ -302,6 +641,41 @@ const ProjectDetail = () => {
                 <Card>
                   <CardHeader>
                     <CardTitle>Files</CardTitle>
+                    <div className="flex justify-between items-center">
+                      <Button variant="ghost" size="sm" onClick={() => setNewFileDialogOpen(true)}>
+                        <FilePlus className="h-4 w-4 mr-2" />
+                        New
+                      </Button>
+                      
+                      <Dialog open={newCommitDialogOpen} onOpenChange={setNewCommitDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <GitBranch className="h-4 w-4 mr-2" />
+                            Commit
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Commit Changes</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="message">Commit Message</Label>
+                              <Textarea
+                                id="message"
+                                value={commitMessage}
+                                onChange={(e) => setCommitMessage(e.target.value)}
+                                placeholder="Describe your changes"
+                                rows={3}
+                              />
+                            </div>
+                          </div>
+                          <DialogFooter>
+                            <Button onClick={handleAddCommit}>Commit Changes</Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
                   </CardHeader>
                   <CardContent>
                     <ul className="space-y-2">
@@ -343,17 +717,81 @@ const ProjectDetail = () => {
           
           <TabsContent value="tasks" className="space-y-6">
             <Card>
-              <CardHeader>
-                <CardTitle>Tasks</CardTitle>
-                <CardDescription>
-                  Manage tasks for this project
-                </CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Tasks</CardTitle>
+                  <CardDescription>
+                    Manage tasks for this project
+                  </CardDescription>
+                </div>
+                <Dialog open={newTaskDialogOpen} onOpenChange={setNewTaskDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Task
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Create New Task</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="title">Task Title</Label>
+                        <Input
+                          id="title"
+                          value={newTask.title}
+                          onChange={(e) => setNewTask({...newTask, title: e.target.value})}
+                          placeholder="Enter task title"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="description">Description</Label>
+                        <Textarea
+                          id="description"
+                          value={newTask.description}
+                          onChange={(e) => setNewTask({...newTask, description: e.target.value})}
+                          placeholder="Describe your task"
+                          rows={3}
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="priority">Priority</Label>
+                          <select
+                            id="priority"
+                            value={newTask.priority}
+                            onChange={(e) => setNewTask({...newTask, priority: e.target.value})}
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                          >
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                          </select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="dueDate">Due Date</Label>
+                          <Input
+                            id="dueDate"
+                            type="date"
+                            value={newTask.dueDate}
+                            onChange={(e) => setNewTask({...newTask, dueDate: e.target.value})}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button onClick={handleAddTask}>Create Task</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
               </CardHeader>
               <CardContent>
                 {projectTasks.length === 0 ? (
                   <div className="text-center py-8">
                     <p className="text-muted-foreground mb-4">No tasks for this project yet</p>
-                    <Button>
+                    <Button onClick={() => setNewTaskDialogOpen(true)}>
+                      <Plus className="h-4 w-4 mr-2" />
                       Add New Task
                     </Button>
                   </div>
@@ -377,6 +815,11 @@ const ProjectDetail = () => {
                             </div>
                           </Card>
                         ))}
+                        {projectTasks.filter(task => task.status === 'todo').length === 0 && (
+                          <div className="text-center p-4 border rounded-md text-muted-foreground">
+                            No tasks
+                          </div>
+                        )}
                       </div>
                     </div>
                     
@@ -398,6 +841,11 @@ const ProjectDetail = () => {
                             </div>
                           </Card>
                         ))}
+                        {projectTasks.filter(task => task.status === 'in-progress').length === 0 && (
+                          <div className="text-center p-4 border rounded-md text-muted-foreground">
+                            No tasks
+                          </div>
+                        )}
                       </div>
                     </div>
                     
@@ -419,6 +867,11 @@ const ProjectDetail = () => {
                             </div>
                           </Card>
                         ))}
+                        {projectTasks.filter(task => task.status === 'completed').length === 0 && (
+                          <div className="text-center p-4 border rounded-md text-muted-foreground">
+                            No tasks
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -429,17 +882,23 @@ const ProjectDetail = () => {
           
           <TabsContent value="meetings" className="space-y-6">
             <Card>
-              <CardHeader>
-                <CardTitle>Meetings</CardTitle>
-                <CardDescription>
-                  Upcoming meetings for this project
-                </CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Meetings</CardTitle>
+                  <CardDescription>
+                    Upcoming meetings for this project
+                  </CardDescription>
+                </div>
+                <Button onClick={() => setNewMeetingDialogOpen(true)}>
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Schedule Meeting
+                </Button>
               </CardHeader>
               <CardContent>
                 {project.meetings.length === 0 ? (
                   <div className="text-center py-8">
                     <p className="text-muted-foreground mb-4">No meetings scheduled</p>
-                    <Button onClick={handleAddMeeting}>
+                    <Button onClick={() => setNewMeetingDialogOpen(true)}>
                       Schedule a Meeting
                     </Button>
                   </div>
@@ -447,6 +906,72 @@ const ProjectDetail = () => {
                   <div className="space-y-4">
                     {project.meetings.map(meeting => (
                       <MeetingItem key={meeting.id} meeting={meeting} />
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="commits" className="space-y-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Commit History</CardTitle>
+                  <CardDescription>
+                    Track changes to your project files
+                  </CardDescription>
+                </div>
+                <Button onClick={() => setNewCommitDialogOpen(true)}>
+                  <GitBranch className="h-4 w-4 mr-2" />
+                  New Commit
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {!project.commits || project.commits.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground mb-4">No commits yet</p>
+                    <Button onClick={() => setNewCommitDialogOpen(true)}>
+                      Make Your First Commit
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="border rounded-md overflow-hidden divide-y">
+                    {project.commits.map(commit => (
+                      <CommitItem key={commit.id} commit={commit} />
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="pulls" className="space-y-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Pull Requests</CardTitle>
+                  <CardDescription>
+                    Review and merge code changes
+                  </CardDescription>
+                </div>
+                <Button>
+                  <GitPullRequest className="h-4 w-4 mr-2" />
+                  New PR
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {!project.pullRequests || project.pullRequests.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground mb-4">No pull requests yet</p>
+                    <Button>
+                      Create Pull Request
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="border rounded-md overflow-hidden divide-y">
+                    {project.pullRequests.map(pr => (
+                      <PullRequestItem key={pr.id} pr={pr} />
                     ))}
                   </div>
                 )}
@@ -466,15 +991,15 @@ const ProjectDetail = () => {
                       <div className="w-full h-full">
                         <div className="flex justify-around h-full items-end">
                           <div className="flex flex-col items-center">
-                            <div className="bg-blue-500 w-16 rounded-t-md" style={{ height: `${(statusCounts.todo / projectTasks.length) * 200}px` }}></div>
+                            <div className="bg-blue-500 w-16 rounded-t-md" style={{ height: `${(statusCounts.todo / Math.max(projectTasks.length, 1)) * 200}px` }}></div>
                             <span className="mt-2 text-sm">Todo ({statusCounts.todo})</span>
                           </div>
                           <div className="flex flex-col items-center">
-                            <div className="bg-yellow-500 w-16 rounded-t-md" style={{ height: `${(statusCounts.inProgress / projectTasks.length) * 200}px` }}></div>
+                            <div className="bg-yellow-500 w-16 rounded-t-md" style={{ height: `${(statusCounts.inProgress / Math.max(projectTasks.length, 1)) * 200}px` }}></div>
                             <span className="mt-2 text-sm">In Progress ({statusCounts.inProgress})</span>
                           </div>
                           <div className="flex flex-col items-center">
-                            <div className="bg-green-500 w-16 rounded-t-md" style={{ height: `${(statusCounts.completed / projectTasks.length) * 200}px` }}></div>
+                            <div className="bg-green-500 w-16 rounded-t-md" style={{ height: `${(statusCounts.completed / Math.max(projectTasks.length, 1)) * 200}px` }}></div>
                             <span className="mt-2 text-sm">Completed ({statusCounts.completed})</span>
                           </div>
                         </div>
@@ -503,7 +1028,7 @@ const ProjectDetail = () => {
                               fill="transparent"
                               stroke="rgb(59, 130, 246)" 
                               strokeWidth="50" 
-                              strokeDasharray={`${(priorityCounts.low / projectTasks.length) * 157} 157`} 
+                              strokeDasharray={`${(priorityCounts.low / Math.max(projectTasks.length, 1)) * 157} 157`} 
                               transform="rotate(-90) translate(-100, 0)" 
                             />
                             {/* Medium priority slice */}
@@ -512,8 +1037,8 @@ const ProjectDetail = () => {
                               fill="transparent"
                               stroke="rgb(234, 179, 8)" 
                               strokeWidth="50" 
-                              strokeDasharray={`${(priorityCounts.medium / projectTasks.length) * 157} 157`} 
-                              strokeDashoffset={`${-1 * (priorityCounts.low / projectTasks.length) * 157}`}
+                              strokeDasharray={`${(priorityCounts.medium / Math.max(projectTasks.length, 1)) * 157} 157`} 
+                              strokeDashoffset={`${-1 * (priorityCounts.low / Math.max(projectTasks.length, 1)) * 157}`}
                               transform="rotate(-90) translate(-100, 0)" 
                             />
                             {/* High priority slice */}
@@ -522,8 +1047,8 @@ const ProjectDetail = () => {
                               fill="transparent"
                               stroke="rgb(239, 68, 68)" 
                               strokeWidth="50" 
-                              strokeDasharray={`${(priorityCounts.high / projectTasks.length) * 157} 157`} 
-                              strokeDashoffset={`${-1 * ((priorityCounts.low + priorityCounts.medium) / projectTasks.length) * 157}`}
+                              strokeDasharray={`${(priorityCounts.high / Math.max(projectTasks.length, 1)) * 157} 157`} 
+                              strokeDashoffset={`${-1 * ((priorityCounts.low + priorityCounts.medium) / Math.max(projectTasks.length, 1)) * 157}`}
                               transform="rotate(-90) translate(-100, 0)" 
                             />
                           </svg>
