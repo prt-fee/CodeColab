@@ -1,12 +1,11 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import ProjectCard from './ProjectCard';
 
-const ProjectsList = ({ projects, onCreateClick }) => {
+const ProjectsList = ({ projects, onCreateClick, onProjectClick }) => {
   return (
     <div className="mb-12">
       <div className="flex items-center justify-between mb-6">
@@ -30,7 +29,11 @@ const ProjectsList = ({ projects, onCreateClick }) => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {projects.map((project) => (
-            <ProjectCard key={project.id} project={project} />
+            <ProjectCard 
+              key={project.id} 
+              project={project} 
+              onClick={() => onProjectClick(project.id)}
+            />
           ))}
         </div>
       )}

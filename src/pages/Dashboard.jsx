@@ -1,17 +1,19 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Loader2, Plus } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import NavBar from '@/components/NavBar';
 import { useTaskManager } from '@/hooks/useTaskManager';
 
-// Import the new component files
+// Import the component files
 import StatsCards from '@/components/dashboard/StatsCards';
 import ProjectsList from '@/components/dashboard/ProjectsList';
 import RecentTasks from '@/components/dashboard/RecentTasks';
 import NewProjectDialog from '@/components/dashboard/NewProjectDialog';
 
+// Mock projects data
 const mockProjects = [
   {
     id: '1',
@@ -53,6 +55,7 @@ const mockProjects = [
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [newProject, setNewProject] = useState({
@@ -64,13 +67,27 @@ const Dashboard = () => {
   const { tasks } = useTaskManager();
 
   useEffect(() => {
+    // Load projects from localStorage if available
+    const savedProjects = localStorage.getItem('user_projects');
+    
     const timer = setTimeout(() => {
-      setProjects(mockProjects);
+      if (savedProjects) {
+        setProjects(JSON.parse(savedProjects));
+      } else {
+        setProjects(mockProjects);
+      }
       setIsLoading(false);
     }, 1000);
     
     return () => clearTimeout(timer);
   }, []);
+
+  // Save projects to localStorage when they change
+  useEffect(() => {
+    if (projects.length > 0 && !isLoading) {
+      localStorage.setItem('user_projects', JSON.stringify(projects));
+    }
+  }, [projects, isLoading]);
 
   const handleCreateProject = (e) => {
     e.preventDefault();
@@ -94,10 +111,15 @@ const Dashboard = () => {
       tasksCount: {
         total: 0,
         completed: 0
-      }
+      },
+      files: [],
+      meetings: [],
+      commits: [],
+      pullRequests: []
     };
     
-    setProjects([...projects, newProjectData]);
+    const updatedProjects = [...projects, newProjectData];
+    setProjects(updatedProjects);
     
     toast({
       title: "Success",
@@ -106,6 +128,9 @@ const Dashboard = () => {
     
     setNewProject({ name: '', description: '' });
     setIsDialogOpen(false);
+    
+    // Navigate to the new project
+    navigate(`/project/${newProjectData.id}`);
   };
 
   // Calculate upcoming tasks (due in the next 7 days)
@@ -116,6 +141,10 @@ const Dashboard = () => {
     nextWeek.setDate(today.getDate() + 7);
     return dueDate >= today && dueDate <= nextWeek;
   }).length;
+
+  const handleProjectClick = (projectId) => {
+    navigate(`/project/${projectId}`);
+  };
 
   if (isLoading) {
     return (
@@ -145,6 +174,7 @@ const Dashboard = () => {
         <ProjectsList 
           projects={projects}
           onCreateClick={() => setIsDialogOpen(true)}
+          onProjectClick={handleProjectClick}
         />
         
         <RecentTasks tasks={tasks} />
