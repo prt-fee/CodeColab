@@ -17,7 +17,7 @@ const ProjectCard = ({ project, onClick }) => {
 
   return (
     <div
-      onClick={onClick}
+      onClick={() => onClick(project.id)}
       className="bg-white rounded-lg border shadow-sm p-5 cursor-pointer transition-all duration-200 hover:shadow-md hover:border-primary/30"
     >
       <div className="flex items-center gap-3 mb-3">
