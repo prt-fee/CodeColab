@@ -146,6 +146,15 @@ const TeamPanel = ({ members }) => {
                 placeholder="Enter member email"
               />
             </div>
+            <div className="space-y-2">
+              <label htmlFor="avatar" className="text-sm font-medium">Avatar URL (optional)</label>
+              <Input
+                id="avatar"
+                value={newMember.avatar}
+                onChange={(e) => setNewMember({...newMember, avatar: e.target.value})}
+                placeholder="Enter avatar URL"
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddMember(false)}>Cancel</Button>

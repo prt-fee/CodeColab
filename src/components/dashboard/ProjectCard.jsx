@@ -15,6 +15,23 @@ const ProjectCard = ({ project, onClick }) => {
     }).format(new Date(date));
   };
 
+  const getColorClasses = (color) => {
+    switch (color) {
+      case 'blue':
+        return 'bg-blue-100 text-blue-500';
+      case 'green':
+        return 'bg-green-100 text-green-500';
+      case 'orange':
+        return 'bg-orange-100 text-orange-500';
+      case 'red':
+        return 'bg-red-100 text-red-500';
+      case 'purple':
+        return 'bg-purple-100 text-purple-500';
+      default:
+        return 'bg-primary-100 text-primary-500';
+    }
+  };
+
   return (
     <div
       onClick={() => onClick(project.id)}
@@ -22,7 +39,7 @@ const ProjectCard = ({ project, onClick }) => {
     >
       <div className="flex items-center gap-3 mb-3">
         <div 
-          className={`w-10 h-10 rounded-md flex items-center justify-center bg-${project.color ? project.color : 'primary'}-100 text-${project.color ? project.color : 'primary'}-500`}
+          className={`w-10 h-10 rounded-md flex items-center justify-center ${getColorClasses(project.color)}`}
         >
           <Plus size={20} />
         </div>
@@ -57,7 +74,7 @@ const ProjectCard = ({ project, onClick }) => {
       
       <div className="flex items-center justify-between mt-4 text-muted-foreground text-xs">
         <div className="flex items-center gap-1">
-          <span>{project.members} members</span>
+          <span>{typeof project.members === 'number' ? project.members : (project.members?.length || 0)} members</span>
         </div>
         
         <div className="flex items-center gap-1">

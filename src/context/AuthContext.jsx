@@ -1,140 +1,121 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { toast } from "@/hooks/use-toast";
+import { toast } from '@/hooks/use-toast';
 
-// Create the context
 const AuthContext = createContext(null);
 
-// Mock user data for development
-const MOCK_USER = {
-  id: '1',
-  name: 'John Doe',
-  email: 'john@example.com',
-  avatar: 'https://randomuser.me/api/portraits/men/32.jpg'
-};
-
-// Provider component
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
 
-  // Check if user is already logged in
   useEffect(() => {
-    const checkAuth = () => {
-      try {
-        const storedUser = localStorage.getItem('projectify_user');
-        if (storedUser) {
-          setUser(JSON.parse(storedUser));
-        }
-      } catch (error) {
-        console.error('Auth check error:', error);
-        localStorage.removeItem('projectify_user');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkAuth();
+    // Load user data from localStorage on initial load
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+    
+    // Default user for demo purposes
+    if (!storedUser) {
+      const defaultUser = {
+        id: '1',
+        name: 'Demo User',
+        email: 'demo@example.com',
+        avatar: 'https://i.pravatar.cc/150?img=30'
+      };
+      localStorage.setItem('user', JSON.stringify(defaultUser));
+      setUser(defaultUser);
+    }
+    
+    setLoading(false);
   }, []);
 
-  // Login function
-  const login = async (email, password) => {
-    setIsLoading(true);
-    try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+  const login = (email, password) => {
+    // In a real app, this would validate with a backend
+    if (email && password) {
+      const userData = {
+        id: '1',
+        name: 'Demo User',
+        email: email,
+        avatar: 'https://i.pravatar.cc/150?img=30'
+      };
       
-      // In a real app, you would validate credentials with your API
-      if (email && password) {
-        setUser(MOCK_USER);
-        localStorage.setItem('projectify_user', JSON.stringify(MOCK_USER));
-        toast({
-          title: "Login Successful",
-          description: `Welcome back, ${MOCK_USER.name}!`,
-        });
-        navigate('/dashboard');
-        return MOCK_USER;
-      } else {
-        throw new Error('Invalid credentials');
-      }
-    } catch (error) {
-      console.error('Login error:', error);
-      toast({
-        title: "Login Failed",
-        description: error.message || "Invalid credentials",
-        variant: "destructive"
-      });
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Register function
-  const register = async (name, email, password) => {
-    setIsLoading(true);
-    try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      localStorage.setItem('user', JSON.stringify(userData));
+      setUser(userData);
       
-      // In a real app, you would register the user with your API
-      if (name && email && password) {
-        const newUser = { ...MOCK_USER, name, email };
-        setUser(newUser);
-        localStorage.setItem('projectify_user', JSON.stringify(newUser));
-        toast({
-          title: "Registration Successful",
-          description: `Welcome to Projectify, ${name}!`,
-        });
-        navigate('/dashboard');
-        return newUser;
-      } else {
-        throw new Error('Invalid registration data');
-      }
-    } catch (error) {
-      console.error('Registration error:', error);
       toast({
-        title: "Registration Failed",
-        description: error.message || "Could not create account",
-        variant: "destructive"
+        title: "Login successful",
+        description: "Welcome back!",
       });
-      throw error;
-    } finally {
-      setIsLoading(false);
+      
+      return true;
     }
-  };
-
-  // Logout function
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('projectify_user');
+    
     toast({
-      title: "Logged Out",
-      description: "You have been successfully logged out.",
+      title: "Login failed",
+      description: "Invalid email or password",
+      variant: "destructive",
     });
-    navigate('/login');
+    
+    return false;
+  };
+
+  const register = (name, email, password) => {
+    // In a real app, this would register with a backend
+    if (name && email && password) {
+      const userData = {
+        id: '1',
+        name: name,
+        email: email,
+        avatar: 'https://i.pravatar.cc/150?img=30'
+      };
+      
+      localStorage.setItem('user', JSON.stringify(userData));
+      setUser(userData);
+      
+      toast({
+        title: "Registration successful",
+        description: "Account created successfully",
+      });
+      
+      return true;
+    }
+    
+    toast({
+      title: "Registration failed",
+      description: "Please fill all required fields",
+      variant: "destructive",
+    });
+    
+    return false;
+  };
+
+  const logout = () => {
+    localStorage.removeItem('user');
+    setUser(null);
+    
+    toast({
+      title: "Logged out",
+      description: "You have been logged out successfully",
+    });
+  };
+
+  const updateUser = (userData) => {
+    const updatedUser = { ...user, ...userData };
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    setUser(updatedUser);
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      isAuthenticated: !!user, 
-      isLoading, 
-      login, 
-      register, 
-      logout 
-    }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-// Custom hook to use the auth context
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
+  if (context === null) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;

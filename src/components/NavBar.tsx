@@ -1,20 +1,29 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, ChevronDown } from 'lucide-react';
+import { Menu, X, ChevronDown, UserCircle, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/context/AuthContext';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const NavBar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const { user, logout } = useAuth();
 
   // Check if we're on the auth pages
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
   
   // Check if we're on the main app pages
-  const isAppPage = ['/dashboard', '/tasks', '/projects', '/calendar'].includes(location.pathname);
+  const isAppPage = ['/dashboard', '/tasks', '/projects', '/calendar', '/profile'].includes(location.pathname) 
+                   || location.pathname.startsWith('/project/');
 
   useEffect(() => {
     const handleScroll = () => {
@@ -94,16 +103,41 @@ const NavBar: React.FC = () => {
         {/* Auth/App Links */}
         {!isAppPage ? (
           <div className="hidden md:flex items-center gap-4">
-            <Link to="/login">
-              <Button variant="outline" size="sm" className="font-medium">
-                Log in
-              </Button>
-            </Link>
-            <Link to="/register">
-              <Button size="sm" className="font-medium">
-                Sign up
-              </Button>
-            </Link>
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="flex items-center gap-2">
+                    <UserCircle size={16} />
+                    {user.name || 'Account'}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild>
+                    <Link to="/dashboard">Dashboard</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile">Profile</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={logout}>
+                    <LogOut size={16} className="mr-2" />
+                    Log out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <>
+                <Link to="/login">
+                  <Button variant="outline" size="sm" className="font-medium">
+                    Log in
+                  </Button>
+                </Link>
+                <Link to="/register">
+                  <Button size="sm" className="font-medium">
+                    Sign up
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         ) : (
           <div className="hidden md:flex items-center gap-4">
@@ -122,6 +156,25 @@ const NavBar: React.FC = () => {
                 Projects
               </Button>
             </Link>
+            {user && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="flex items-center gap-2">
+                    <UserCircle size={16} />
+                    {user.name || 'Account'}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile">Profile</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={logout}>
+                    <LogOut size={16} className="mr-2" />
+                    Log out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         )}
         
@@ -183,18 +236,38 @@ const NavBar: React.FC = () => {
           
           {!isAppPage ? (
             <>
-              <Link 
-                to="/login" 
-                className="py-2 px-3 text-base font-medium rounded-md hover:bg-secondary"
-              >
-                Log in
-              </Link>
-              <Link 
-                to="/register" 
-                className="py-2 px-3 text-base font-medium rounded-md bg-primary text-primary-foreground"
-              >
-                Sign up
-              </Link>
+              {user ? (
+                <>
+                  <Link to="/dashboard" className="py-2 px-3 text-base font-medium rounded-md hover:bg-secondary">
+                    Dashboard
+                  </Link>
+                  <Link to="/profile" className="py-2 px-3 text-base font-medium rounded-md hover:bg-secondary">
+                    Profile
+                  </Link>
+                  <button 
+                    onClick={logout}
+                    className="py-2 px-3 text-base font-medium rounded-md hover:bg-secondary text-left flex items-center"
+                  >
+                    <LogOut size={16} className="mr-2" />
+                    Log out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link 
+                    to="/login" 
+                    className="py-2 px-3 text-base font-medium rounded-md hover:bg-secondary"
+                  >
+                    Log in
+                  </Link>
+                  <Link 
+                    to="/register" 
+                    className="py-2 px-3 text-base font-medium rounded-md bg-primary text-primary-foreground"
+                  >
+                    Sign up
+                  </Link>
+                </>
+              )}
             </>
           ) : (
             <>
@@ -225,6 +298,22 @@ const NavBar: React.FC = () => {
               >
                 Projects
               </Link>
+              <Link 
+                to="/profile" 
+                className={cn(
+                  "py-2 px-3 text-base font-medium rounded-md transition-colors",
+                  location.pathname === '/profile' ? "bg-primary/10 text-primary" : "hover:bg-secondary"
+                )}
+              >
+                Profile
+              </Link>
+              <button 
+                onClick={logout}
+                className="py-2 px-3 text-base font-medium rounded-md hover:bg-secondary text-left flex items-center"
+              >
+                <LogOut size={16} className="mr-2" />
+                Log out
+              </button>
             </>
           )}
         </div>

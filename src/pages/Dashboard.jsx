@@ -72,7 +72,19 @@ const Dashboard = () => {
     
     const timer = setTimeout(() => {
       if (savedProjects) {
-        setProjects(JSON.parse(savedProjects));
+        try {
+          const parsedProjects = JSON.parse(savedProjects);
+          // Ensure the data is in the expected format
+          if (Array.isArray(parsedProjects)) {
+            setProjects(parsedProjects);
+          } else {
+            console.warn('Saved projects is not an array, using mock data');
+            setProjects(mockProjects);
+          }
+        } catch (e) {
+          console.error('Failed to parse saved projects', e);
+          setProjects(mockProjects);
+        }
       } else {
         setProjects(mockProjects);
       }
@@ -120,6 +132,7 @@ const Dashboard = () => {
     
     const updatedProjects = [...projects, newProjectData];
     setProjects(updatedProjects);
+    localStorage.setItem('user_projects', JSON.stringify(updatedProjects));
     
     toast({
       title: "Success",
@@ -135,6 +148,7 @@ const Dashboard = () => {
 
   // Calculate upcoming tasks (due in the next 7 days)
   const upcomingTasksCount = tasks.filter(task => {
+    if (!task.dueDate) return false;
     const dueDate = new Date(task.dueDate);
     const today = new Date();
     const nextWeek = new Date();
