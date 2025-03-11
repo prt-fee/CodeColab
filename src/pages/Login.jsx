@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,7 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { login } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,7 +29,12 @@ const Login = () => {
     
     try {
       setIsSubmitting(true);
-      await login(email, password);
+      const success = login(email, password);
+      
+      if (success) {
+        console.log("Login successful, redirecting to dashboard");
+        navigate('/dashboard');
+      }
     } catch (error) {
       toast({
         title: "Login Failed",
