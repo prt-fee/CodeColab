@@ -18,8 +18,8 @@ import { Toaster } from './components/ui/toaster';
 
 function App() {
   return (
-    <Router>
-      <AuthProvider>
+    <AuthProvider>
+      <Router>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/dashboard" element={<Dashboard />} />
@@ -34,9 +34,9 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
-        <Toaster />
-      </AuthProvider>
-    </Router>
+      </Router>
+      <Toaster />
+    </AuthProvider>
   );
 }
 

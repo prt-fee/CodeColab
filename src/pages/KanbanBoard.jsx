@@ -1,21 +1,15 @@
+
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useTaskManager } from '@/hooks/useTaskManager';
-import { Plus, ArrowLeft, Filter, Search, Bell } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import NavBar from '@/components/NavBar';
 import KanbanColumn from '@/components/kanban/KanbanColumn';
+import KanbanTaskDialog from '@/components/kanban/KanbanTaskDialog';
+import KanbanSearch from '@/components/kanban/KanbanSearch';
+import KanbanStats from '@/components/kanban/KanbanStats';
+import KanbanHeader from '@/components/kanban/KanbanHeader';
 
 const KanbanBoard = () => {
-  const navigate = useNavigate();
   const { tasks, addTask, updateTask } = useTaskManager();
   const [searchTerm, setSearchTerm] = useState('');
   const [isNewTaskDialogOpen, setIsNewTaskDialogOpen] = useState(false);
@@ -147,40 +141,18 @@ const KanbanBoard = () => {
       <NavBar />
       <div className="container mx-auto py-6 px-4 md:px-6 pt-20">
         <div className="flex flex-col space-y-5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => navigate('/dashboard')}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back
-              </Button>
-              <h1 className="text-3xl font-bold">Kanban Board</h1>
-            </div>
-            <div className="flex items-center gap-3">
-              <Badge variant="outline" className="bg-primary/5 hover:bg-primary/10">
-                {completionRate}% Complete
-              </Badge>
-              <Button onClick={() => setIsNewTaskDialogOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Task
-              </Button>
-            </div>
-          </div>
+          <KanbanHeader 
+            completionRate={completionRate} 
+            openNewTaskDialog={() => setIsNewTaskDialogOpen(true)} 
+          />
 
           {/* Dashboard Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-2 mb-6">
-            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 shadow-sm">
-              <h3 className="text-blue-600 dark:text-blue-400 font-medium text-sm uppercase tracking-wider">To Do</h3>
-              <p className="text-2xl font-bold">{todoTasks.length}</p>
-            </div>
-            <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4 shadow-sm">
-              <h3 className="text-amber-600 dark:text-amber-400 font-medium text-sm uppercase tracking-wider">In Progress</h3>
-              <p className="text-2xl font-bold">{inProgressTasks.length}</p>
-            </div>
-            <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 shadow-sm">
-              <h3 className="text-green-600 dark:text-green-400 font-medium text-sm uppercase tracking-wider">Completed</h3>
-              <p className="text-2xl font-bold">{completedTasks.length}</p>
-            </div>
-          </div>
+          <KanbanStats 
+            todoTasks={todoTasks} 
+            inProgressTasks={inProgressTasks} 
+            completedTasks={completedTasks} 
+            completionRate={completionRate} 
+          />
 
           {/* Filters */}
           <KanbanSearch 
