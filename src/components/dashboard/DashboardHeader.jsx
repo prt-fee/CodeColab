@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,15 @@ import NewProjectDialog from './NewProjectDialog';
 
 const DashboardHeader = () => {
   const { user } = useAuth();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [newProject, setNewProject] = useState({ name: '', description: '' });
+  
+  const handleCreateProject = (e) => {
+    e.preventDefault();
+    // Implementation will be handled by the parent component
+    console.log('Create project:', newProject);
+    setIsDialogOpen(false);
+  };
   
   return (
     <header className="mb-8">
@@ -35,14 +44,20 @@ const DashboardHeader = () => {
             </Button>
           </Link>
           
-          <Dialog>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
                 New Project
               </Button>
             </DialogTrigger>
-            <NewProjectDialog />
+            <NewProjectDialog 
+              isOpen={isDialogOpen}
+              onOpenChange={setIsDialogOpen}
+              newProject={newProject}
+              setNewProject={setNewProject}
+              onCreateProject={handleCreateProject}
+            />
           </Dialog>
         </div>
       </div>

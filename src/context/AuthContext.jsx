@@ -11,19 +11,34 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Load user data from localStorage on initial load
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
+    const initializeUser = () => {
       try {
-        setUser(JSON.parse(storedUser));
+        // Load user data from localStorage on initial load
+        const storedUser = localStorage.getItem('user');
+        
+        if (storedUser) {
+          try {
+            const parsedUser = JSON.parse(storedUser);
+            setUser(parsedUser);
+            console.log('User loaded from localStorage:', parsedUser);
+          } catch (error) {
+            console.error("Failed to parse user data:", error);
+            localStorage.removeItem('user');
+            setDefaultUser();
+          }
+        } else {
+          setDefaultUser();
+        }
       } catch (error) {
-        console.error("Failed to parse user data:", error);
-        localStorage.removeItem('user');
+        console.error("Error initializing auth:", error);
+        setDefaultUser();
+      } finally {
+        setLoading(false);
       }
-    }
-    
-    // If no stored user, set default user for demo
-    if (!storedUser) {
+    };
+
+    const setDefaultUser = () => {
+      // Set default user for demo
       const defaultUser = {
         id: '1',
         name: 'Demo User',
@@ -32,9 +47,10 @@ export const AuthProvider = ({ children }) => {
       };
       localStorage.setItem('user', JSON.stringify(defaultUser));
       setUser(defaultUser);
-    }
-    
-    setLoading(false);
+      console.log('Default user set:', defaultUser);
+    };
+
+    initializeUser();
   }, []);
 
   const login = (email, password) => {
