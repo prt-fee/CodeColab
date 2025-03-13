@@ -9,24 +9,15 @@ import Footer from '@/components/Footer';
 import NavBar from '@/components/NavBar';
 
 const Index = () => {
-  const { isAuthenticated, user, loading } = useAuth();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     // If the user is already authenticated, redirect to dashboard
-    // But only after we've confirmed loading is complete
-    if (!loading && isAuthenticated && user) {
+    if (isAuthenticated) {
       navigate('/dashboard');
     }
-  }, [isAuthenticated, user, loading, navigate]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  }, [isAuthenticated, navigate]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
