@@ -7,6 +7,8 @@ import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
 import Tasks from './pages/Tasks';
 import KanbanBoard from './pages/KanbanBoard';
+import MeetingScheduler from './pages/MeetingScheduler';
+import ProjectUpload from './pages/ProjectUpload';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
@@ -16,8 +18,8 @@ import { Toaster } from './components/ui/toaster';
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
+    <Router>
+      <AuthProvider>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/dashboard" element={<Dashboard />} />
@@ -25,14 +27,16 @@ function App() {
           <Route path="/projects/:projectId" element={<ProjectDetail />} />
           <Route path="/tasks" element={<Tasks />} />
           <Route path="/kanban" element={<KanbanBoard />} />
+          <Route path="/meetings" element={<MeetingScheduler />} />
+          <Route path="/upload" element={<ProjectUpload />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
-      </Router>
-      <Toaster />
-    </AuthProvider>
+        <Toaster />
+      </AuthProvider>
+    </Router>
   );
 }
 

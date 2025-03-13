@@ -57,12 +57,12 @@ const NavBar = () => {
             <Link to="/tasks" className="text-sm font-medium hover:text-primary">
               Tasks
             </Link>
-            {isAuthenticated ? (
+            {isAuthenticated && user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={user?.avatar} alt={user?.name} />
+                      <AvatarImage src={user?.avatar} alt={user?.name || 'User'} />
                       <AvatarFallback>{getInitials(user?.name)}</AvatarFallback>
                     </Avatar>
                   </Button>
@@ -70,8 +70,8 @@ const NavBar = () => {
                 <DropdownMenuContent align="end">
                   <div className="flex items-center justify-start gap-2 p-2">
                     <div className="flex flex-col space-y-1 leading-none">
-                      <p className="font-medium">{user?.name}</p>
-                      <p className="text-xs text-muted-foreground">{user?.email}</p>
+                      <p className="font-medium">{user?.name || 'User'}</p>
+                      <p className="text-xs text-muted-foreground">{user?.email || 'user@example.com'}</p>
                     </div>
                   </div>
                   <DropdownMenuSeparator />
@@ -143,7 +143,7 @@ const NavBar = () => {
               Tasks
             </Link>
             
-            {isAuthenticated ? (
+            {isAuthenticated && user ? (
               <>
                 <Link
                   to="/profile"
