@@ -1,51 +1,43 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Dashboard from "./pages/Dashboard";
-import Features from "./pages/Features";
-import About from "./pages/About";
-import Contact from "./pages/Contact";
-import ProjectDetail from "./pages/ProjectDetail";
-import Tasks from "./pages/Tasks";
-import Projects from "./pages/Projects";
-import Profile from "./pages/Profile";
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Index from './pages/Index';
+import Dashboard from './pages/Dashboard';
+import Projects from './pages/Projects';
+import ProjectDetail from './pages/ProjectDetail';
+import Tasks from './pages/Tasks';
+import KanbanBoard from './pages/KanbanBoard';
+import MeetingScheduler from './pages/MeetingScheduler';
+import ProjectUpload from './pages/ProjectUpload';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Profile from './pages/Profile';
+import NotFound from './pages/NotFound';
+import { AuthProvider } from './context/AuthContext';
+import { Toaster } from './components/ui/toaster';
 
-const queryClient = new QueryClient();
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <BrowserRouter>
+function App() {
+  return (
+    <Router>
       <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/features" element={<Features />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/project/:id" element={<ProjectDetail />} />
-            <Route path="/tasks" element={<Tasks />} />
-            <Route path="/projects" element={<Projects />} />
-            <Route path="/profile" element={<Profile />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </TooltipProvider>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/projects" element={<Projects />} />
+          <Route path="/projects/:projectId" element={<ProjectDetail />} />
+          <Route path="/tasks" element={<Tasks />} />
+          <Route path="/kanban" element={<KanbanBoard />} />
+          <Route path="/meetings" element={<MeetingScheduler />} />
+          <Route path="/upload" element={<ProjectUpload />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+        <Toaster />
       </AuthProvider>
-    </BrowserRouter>
-  </QueryClientProvider>
-);
+    </Router>
+  );
+}
 
 export default App;
