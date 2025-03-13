@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTaskManager } from '@/hooks/useTaskManager';
@@ -13,6 +14,8 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import NavBar from '@/components/NavBar';
 import KanbanColumn from '@/components/kanban/KanbanColumn';
+import KanbanSearch from '@/components/kanban/KanbanSearch';
+import KanbanTaskDialog from '@/components/kanban/KanbanTaskDialog';
 
 const KanbanBoard = () => {
   const navigate = useNavigate();
