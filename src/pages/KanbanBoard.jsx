@@ -14,6 +14,8 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import NavBar from '@/components/NavBar';
 import KanbanColumn from '@/components/kanban/KanbanColumn';
+import KanbanSearch from '@/components/kanban/KanbanSearch';
+import KanbanTaskDialog from '@/components/kanban/KanbanTaskDialog';
 
 const KanbanBoard = () => {
   const navigate = useNavigate();
@@ -35,8 +37,8 @@ const KanbanBoard = () => {
 
   // Calculate task statistics
   const totalTasks = tasks.length;
-  const completedTasks = tasks.filter(task => task.status === 'completed').length;
-  const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  const completedTasksCount = tasks.filter(task => task.status === 'completed').length;
+  const completionRate = totalTasks > 0 ? Math.round((completedTasksCount / totalTasks) * 100) : 0;
 
   // Filter tasks based on search term and priority
   const filteredTasks = tasks.filter(task => {
@@ -184,34 +186,12 @@ const KanbanBoard = () => {
           </div>
 
           {/* Filters */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex-1 max-w-md relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search tasks..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Label htmlFor="priority-filter" className="text-sm whitespace-nowrap">
-                Filter by:
-              </Label>
-              <Select value={filterPriority} onValueChange={setFilterPriority}>
-                <SelectTrigger id="priority-filter" className="w-[160px]">
-                  <SelectValue placeholder="Priority" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Priorities</SelectItem>
-                  <SelectItem value="low">Low Priority</SelectItem>
-                  <SelectItem value="medium">Medium Priority</SelectItem>
-                  <SelectItem value="high">High Priority</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          <KanbanSearch 
+            searchTerm={searchTerm} 
+            setSearchTerm={setSearchTerm}
+            filterPriority={filterPriority}
+            setFilterPriority={setFilterPriority}
+          />
 
           {/* Kanban Board */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6" 
@@ -246,66 +226,13 @@ const KanbanBoard = () => {
         </div>
 
         {/* New Task Dialog */}
-        <Dialog open={isNewTaskDialogOpen} onOpenChange={setIsNewTaskDialogOpen}>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Create New Task</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleCreateTask}>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="title">Task Title</Label>
-                  <Input
-                    id="title"
-                    value={newTask.title}
-                    onChange={(e) => setNewTask({...newTask, title: e.target.value})}
-                    placeholder="Enter task title"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    value={newTask.description}
-                    onChange={(e) => setNewTask({...newTask, description: e.target.value})}
-                    placeholder="Describe your task"
-                    rows={3}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="priority">Priority</Label>
-                    <Select 
-                      value={newTask.priority}
-                      onValueChange={(value) => setNewTask({...newTask, priority: value})}
-                    >
-                      <SelectTrigger id="priority">
-                        <SelectValue placeholder="Select priority" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="low">Low</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="high">High</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="dueDate">Due Date</Label>
-                    <Input
-                      id="dueDate"
-                      type="date"
-                      value={newTask.dueDate}
-                      onChange={(e) => setNewTask({...newTask, dueDate: e.target.value})}
-                    />
-                  </div>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button type="submit">Create Task</Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <KanbanTaskDialog 
+          isOpen={isNewTaskDialogOpen}
+          setIsOpen={setIsNewTaskDialogOpen}
+          newTask={newTask}
+          setNewTask={setNewTask}
+          handleCreateTask={handleCreateTask}
+        />
       </div>
     </div>
   );
