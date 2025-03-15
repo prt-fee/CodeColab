@@ -1,220 +1,193 @@
 
 import React, { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  Home,
-  LayoutDashboard,
-  FolderKanban,
-  CheckSquare,
-  Upload,
-  User,
-  LogOut,
-  Menu,
-  X
-} from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { 
+  LayoutDashboard, 
+  LogOut, 
+  Menu, 
+  X, 
+  User,
+  FolderKanban,
+  FileText,
+  Upload,
+  Calendar
+} from 'lucide-react';
 
 const NavBar = () => {
-  const { user, isAuthenticated, logout } = useAuth();
-  const location = useLocation();
-  const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const isActivePath = (path) => {
-    if (path === '/') {
-      return location.pathname === '/';
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout failed', error);
     }
-    return location.pathname.startsWith(path);
   };
-
-  const navigationItems = [
-    {
-      name: 'Home',
-      path: '/',
-      icon: <Home className="h-4 w-4 mr-2" />,
-      showAlways: true,
-    },
-    {
-      name: 'Dashboard',
-      path: '/dashboard',
-      icon: <LayoutDashboard className="h-4 w-4 mr-2" />,
-      showWhenAuth: true,
-    },
-    {
-      name: 'Projects',
-      path: '/projects',
-      icon: <FolderKanban className="h-4 w-4 mr-2" />,
-      showWhenAuth: true,
-    },
-    {
-      name: 'Tasks',
-      path: '/tasks',
-      icon: <CheckSquare className="h-4 w-4 mr-2" />,
-      showWhenAuth: true,
-    },
-    {
-      name: 'Upload',
-      path: '/upload',
-      icon: <Upload className="h-4 w-4 mr-2" />,
-      showWhenAuth: true,
-    },
+  
+  const navLinks = [
+    { href: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard className="h-4 w-4 mr-2" /> },
+    { href: '/projects', label: 'Projects', icon: <FolderKanban className="h-4 w-4 mr-2" /> },
+    { href: '/tasks', label: 'Tasks', icon: <FileText className="h-4 w-4 mr-2" /> },
+    { href: '/meetings', label: 'Meetings', icon: <Calendar className="h-4 w-4 mr-2" /> },
+    { href: '/upload', label: 'Deploy', icon: <Upload className="h-4 w-4 mr-2" /> }
   ];
-
-  const filteredNavItems = navigationItems.filter(item => 
-    item.showAlways || (isAuthenticated && item.showWhenAuth)
-  );
-
+  
+  const isActive = (path) => {
+    return location.pathname === path;
+  };
+  
   return (
-    <header className="fixed w-full bg-background border-b z-10">
-      <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center">
-          <Link to="/" className="flex items-center">
-            <span className="text-primary text-2xl mr-2">●</span>
-            <span className="font-bold text-xl">Projectify</span>
-          </Link>
+    <header className="fixed top-0 left-0 right-0 z-50 bg-background border-b">
+      <div className="container mx-auto px-4 md:px-6">
+        <div className="flex h-16 items-center justify-between">
+          <div className="flex items-center">
+            <Link to="/" className="flex items-center text-xl font-bold">
+              <FolderKanban className="h-6 w-6 mr-2" />
+              ProjectHub
+            </Link>
+          </div>
           
-          <nav className="hidden md:flex ml-8 space-x-1">
-            {filteredNavItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`px-3 py-2 rounded-md text-sm font-medium flex items-center ${
-                  isActivePath(item.path)
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-foreground/60 hover:text-foreground hover:bg-accent'
-                }`}
-              >
-                {item.icon}
-                {item.name}
-              </Link>
-            ))}
-          </nav>
-        </div>
-
-        <div className="flex items-center">
-          {isAuthenticated ? (
-            <div className="flex items-center space-x-4">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                    <Avatar>
-                      <AvatarImage src={user?.avatar} alt={user?.name} />
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center space-x-1">
+            {user ? (
+              <>
+                {navLinks.map((link) => (
+                  <Button 
+                    key={link.href}
+                    variant={isActive(link.href) ? "default" : "ghost"}
+                    asChild
+                  >
+                    <Link to={link.href}>
+                      {link.icon}
+                      {link.label}
+                    </Link>
+                  </Button>
+                ))}
+                
+                <div className="ml-4 flex items-center">
+                  <Button 
+                    variant="ghost" 
+                    className="flex items-center"
+                    onClick={() => navigate('/profile')}
+                  >
+                    <Avatar className="h-8 w-8 mr-2">
+                      <AvatarImage src={user.avatar} />
                       <AvatarFallback>
-                        {user?.name?.charAt(0) || 'U'}
+                        {user.name ? user.name.charAt(0) : 'U'}
                       </AvatarFallback>
                     </Avatar>
+                    <span className="hidden lg:block">{user.name || 'User'}</span>
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate('/profile')}>
-                    <User className="h-4 w-4 mr-2" />
-                    Profile
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={logout}>
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Log out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          ) : (
-            <div className="hidden md:flex items-center space-x-2">
-              <Button variant="ghost" onClick={() => navigate('/login')}>
-                Login
-              </Button>
-              <Button onClick={() => navigate('/register')}>
-                Sign Up
-              </Button>
-            </div>
-          )}
-          
-          <button
-            className="ml-4 md:hidden"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? (
-              <X className="h-6 w-6" />
+                  
+                  <Button variant="ghost" size="icon" onClick={handleLogout}>
+                    <LogOut className="h-5 w-5" />
+                  </Button>
+                </div>
+              </>
             ) : (
-              <Menu className="h-6 w-6" />
+              <>
+                <Button variant="ghost" asChild>
+                  <Link to="/login">Login</Link>
+                </Button>
+                <Button asChild>
+                  <Link to="/register">Sign Up</Link>
+                </Button>
+              </>
             )}
-          </button>
+          </nav>
+          
+          {/* Mobile Menu Toggle */}
+          <div className="md:hidden">
+            <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+              {mobileMenuOpen ? <X /> : <Menu />}
+            </Button>
+          </div>
         </div>
       </div>
       
-      {/* Mobile menu */}
+      {/* Mobile Navigation */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-background border-b">
-          <div className="container mx-auto px-4 py-3">
-            <nav className="flex flex-col space-y-2">
-              {filteredNavItems.map((item) => (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={`px-3 py-2 rounded-md text-sm font-medium flex items-center ${
-                    isActivePath(item.path)
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-foreground/60 hover:text-foreground hover:bg-accent'
-                  }`}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  {item.icon}
-                  {item.name}
-                </Link>
-              ))}
-              {!isAuthenticated && (
-                <>
-                  <Link
-                    to="/login"
-                    className="px-3 py-2 rounded-md text-sm font-medium"
+        <div className="md:hidden border-t p-4 bg-background">
+          <nav className="flex flex-col space-y-2">
+            {user ? (
+              <>
+                <div className="flex items-center p-2 mb-2">
+                  <Avatar className="h-8 w-8 mr-2">
+                    <AvatarImage src={user.avatar} />
+                    <AvatarFallback>
+                      {user.name ? user.name.charAt(0) : 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span>{user.name || 'User'}</span>
+                </div>
+                
+                {navLinks.map((link) => (
+                  <Button 
+                    key={link.href}
+                    variant={isActive(link.href) ? "default" : "ghost"}
+                    className="justify-start"
+                    asChild
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    Login
-                  </Link>
-                  <Link
-                    to="/register"
-                    className="px-3 py-2 rounded-md text-sm font-medium bg-primary text-white"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Sign Up
-                  </Link>
-                </>
-              )}
-              {isAuthenticated && (
-                <Link
-                  to="/profile"
-                  className="px-3 py-2 rounded-md text-sm font-medium flex items-center"
+                    <Link to={link.href}>
+                      {link.icon}
+                      {link.label}
+                    </Link>
+                  </Button>
+                ))}
+                
+                <Button 
+                  variant="ghost" 
+                  className="justify-start"
+                  asChild
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  <User className="h-4 w-4 mr-2" />
-                  Profile
-                </Link>
-              )}
-              {isAuthenticated && (
-                <button
-                  className="px-3 py-2 rounded-md text-sm font-medium flex items-center text-left w-full"
+                  <Link to="/profile">
+                    <User className="h-4 w-4 mr-2" />
+                    Profile
+                  </Link>
+                </Button>
+                
+                <Button 
+                  variant="ghost" 
+                  className="justify-start text-red-500"
                   onClick={() => {
+                    handleLogout();
                     setMobileMenuOpen(false);
-                    logout();
                   }}
                 >
                   <LogOut className="h-4 w-4 mr-2" />
-                  Log Out
-                </button>
-              )}
-            </nav>
-          </div>
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button 
+                  variant="ghost" 
+                  className="justify-start"
+                  asChild
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Link to="/login">Login</Link>
+                </Button>
+                
+                <Button 
+                  className="justify-start"
+                  asChild
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Link to="/register">Sign Up</Link>
+                </Button>
+              </>
+            )}
+          </nav>
         </div>
       )}
     </header>

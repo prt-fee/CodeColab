@@ -11,6 +11,7 @@ import Register from './pages/Register';
 import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
 import ProjectUpload from './pages/ProjectUpload';
+import MeetingScheduler from './pages/MeetingScheduler';
 import { AuthProvider } from './context/AuthContext';
 import { Toaster } from './components/ui/toaster';
 
@@ -25,6 +26,7 @@ function App() {
           <Route path="/projects/:id" element={<ProjectDetail />} />
           <Route path="/tasks" element={<Tasks />} />
           <Route path="/upload" element={<ProjectUpload />} />
+          <Route path="/meetings" element={<MeetingScheduler />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/profile" element={<Profile />} />
