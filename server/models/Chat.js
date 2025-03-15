@@ -11,7 +11,7 @@ const ChatSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['direct', 'group'],
+    enum: ['direct', 'group', 'project'],
     required: true,
   },
   participants: [{
@@ -19,10 +19,18 @@ const ChatSchema = new mongoose.Schema({
     ref: 'User',
     required: true,
   }],
+  admins: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  }],
   lastMessage: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Message',
   },
+  pinnedMessages: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Message',
+  }],
   project: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Project',
@@ -30,6 +38,23 @@ const ChatSchema = new mongoose.Schema({
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
+  },
+  avatar: {
+    type: String,
+  },
+  description: {
+    type: String,
+  },
+  metadata: {
+    typingUsers: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    }],
+    unreadCount: {
+      type: Map,
+      of: Number,
+      default: new Map(),
+    },
   },
   createdAt: {
     type: Date,

@@ -15,8 +15,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from '@/context/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
-import { Send, Search, Plus, Users } from 'lucide-react';
+import { Send, Search, Plus, Users, MessageCircle } from 'lucide-react';
+import ChatMessages from '@/components/chat/ChatMessages';
+import ChatConversationList from '@/components/chat/ChatConversationList';
 
+// Mock data for development
 const MOCK_USERS = [
   { id: 'u1', name: 'John Doe', email: 'john@example.com', avatar: '' },
   { id: 'u2', name: 'Jane Smith', email: 'jane@example.com', avatar: '' },
@@ -50,7 +53,7 @@ const MOCK_CONVERSATIONS = [
   },
 ];
 
-// Mock messages for demonstration
+// Mock messages for development
 const MOCK_MESSAGES = {
   'c1': [
     { id: 'm1', sender: 'u1', text: 'Hello team!', timestamp: new Date(Date.now() - 3600000 * 2).toISOString() },
@@ -74,7 +77,6 @@ const Chat = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [users, setUsers] = useState(MOCK_USERS);
   const [filteredUsers, setFilteredUsers] = useState([]);
-  const messagesEndRef = useRef(null);
 
   useEffect(() => {
     // Filter users based on search term
@@ -88,13 +90,6 @@ const Chat = () => {
       setFilteredUsers([]);
     }
   }, [searchTerm]);
-
-  useEffect(() => {
-    // Scroll to bottom of messages
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages]);
 
   const handleConversationSelect = (conversationId) => {
     setActiveConversation(conversationId);
@@ -191,7 +186,7 @@ const Chat = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background dark:bg-gray-900">
       <NavBar />
       <div className="container mx-auto py-6 px-4 md:px-6 pt-20">
         <h1 className="text-3xl font-bold mb-6">Team Chat</h1>
@@ -241,57 +236,12 @@ const Chat = () => {
               </CardHeader>
               
               <CardContent className="p-0 overflow-auto h-full">
-                <div className="space-y-1">
-                  {conversations.map(conversation => {
-                    const { name, avatar } = getParticipantInfo(conversation);
-                    return (
-                      <div 
-                        key={conversation.id}
-                        className={`p-3 flex items-center gap-3 cursor-pointer hover:bg-accent/50 ${activeConversation === conversation.id ? 'bg-accent' : ''}`}
-                        onClick={() => handleConversationSelect(conversation.id)}
-                      >
-                        <Avatar className="h-10 w-10">
-                          {conversation.type === 'group' ? (
-                            <div className="h-full w-full flex items-center justify-center bg-primary/10">
-                              <Users className="h-5 w-5 text-primary" />
-                            </div>
-                          ) : (
-                            <>
-                              <AvatarImage src={avatar} />
-                              <AvatarFallback>{name[0]}</AvatarFallback>
-                            </>
-                          )}
-                        </Avatar>
-                        
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <p className="font-medium truncate">{name}</p>
-                            {conversation.lastMessage && (
-                              <span className="text-xs text-muted-foreground">
-                                {formatDistanceToNow(new Date(conversation.lastMessage.timestamp), { addSuffix: true })}
-                              </span>
-                            )}
-                          </div>
-                          
-                          {conversation.lastMessage && (
-                            <p className="text-sm text-muted-foreground truncate">
-                              {conversation.lastMessage.sender === 'currentUser' 
-                                ? 'You: ' 
-                                : `${getUserName(conversation.lastMessage.sender)}: `}
-                              {conversation.lastMessage.text}
-                            </p>
-                          )}
-                        </div>
-                        
-                        {conversation.unread > 0 && (
-                          <div className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] text-white">
-                            {conversation.unread}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+                <ChatConversationList 
+                  conversations={conversations}
+                  activeConversation={activeConversation}
+                  onConversationSelect={handleConversationSelect}
+                  getUserInfo={getParticipantInfo}
+                />
               </CardContent>
             </Card>
           </div>
@@ -336,49 +286,11 @@ const Chat = () => {
                   </CardHeader>
                   
                   <CardContent className="p-4 flex-1 overflow-auto">
-                    <div className="space-y-4">
-                      {messages.map(message => {
-                        const isCurrentUser = message.sender === 'currentUser';
-                        return (
-                          <div 
-                            key={message.id}
-                            className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
-                          >
-                            <div className="flex items-start gap-2 max-w-[80%]">
-                              {!isCurrentUser && (
-                                <Avatar className="h-8 w-8 mt-1">
-                                  <AvatarImage src={MOCK_USERS.find(u => u.id === message.sender)?.avatar} />
-                                  <AvatarFallback>
-                                    {getUserName(message.sender)[0]}
-                                  </AvatarFallback>
-                                </Avatar>
-                              )}
-                              
-                              <div>
-                                {!isCurrentUser && (
-                                  <p className="text-xs text-muted-foreground mb-1">
-                                    {getUserName(message.sender)}
-                                  </p>
-                                )}
-                                
-                                <div className={`p-3 rounded-lg ${
-                                  isCurrentUser 
-                                    ? 'bg-primary text-primary-foreground' 
-                                    : 'bg-muted'
-                                }`}>
-                                  <p>{message.text}</p>
-                                </div>
-                                
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  {formatDistanceToNow(new Date(message.timestamp), { addSuffix: true })}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                      <div ref={messagesEndRef} />
-                    </div>
+                    <ChatMessages 
+                      messages={messages} 
+                      currentUser="currentUser"
+                      getUserName={getUserName} 
+                    />
                   </CardContent>
                   
                   <CardFooter className="p-4 border-t">
@@ -402,7 +314,7 @@ const Chat = () => {
               ) : (
                 <div className="flex-1 flex flex-col items-center justify-center p-6">
                   <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                    <MessageSquare className="h-8 w-8 text-primary" />
+                    <MessageCircle className="h-8 w-8 text-primary" />
                   </div>
                   <h3 className="text-xl font-semibold mb-2">No conversation selected</h3>
                   <p className="text-muted-foreground text-center max-w-md">

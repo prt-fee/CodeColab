@@ -15,46 +15,52 @@ const ChatMessages = ({ messages, currentUser, getUserName }) => {
 
   return (
     <div className="space-y-4">
-      {messages.map(message => {
-        const isCurrentUser = message.sender === 'currentUser';
-        return (
-          <div 
-            key={message.id}
-            className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
-          >
-            <div className="flex items-start gap-2 max-w-[80%]">
-              {!isCurrentUser && (
-                <Avatar className="h-8 w-8 mt-1">
-                  <AvatarImage src={message.senderAvatar} />
-                  <AvatarFallback>
-                    {getUserName(message.sender)[0]}
-                  </AvatarFallback>
-                </Avatar>
-              )}
-              
-              <div>
+      {messages.length === 0 ? (
+        <div className="text-center text-muted-foreground py-8">
+          No messages yet. Start the conversation!
+        </div>
+      ) : (
+        messages.map(message => {
+          const isCurrentUser = message.sender === currentUser;
+          return (
+            <div 
+              key={message.id}
+              className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
+            >
+              <div className="flex items-start gap-2 max-w-[80%]">
                 {!isCurrentUser && (
-                  <p className="text-xs text-muted-foreground mb-1">
-                    {getUserName(message.sender)}
-                  </p>
+                  <Avatar className="h-8 w-8 mt-1">
+                    <AvatarImage src={message.senderAvatar} />
+                    <AvatarFallback>
+                      {getUserName(message.sender)[0]}
+                    </AvatarFallback>
+                  </Avatar>
                 )}
                 
-                <div className={`p-3 rounded-lg ${
-                  isCurrentUser 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'bg-muted'
-                }`}>
-                  <p>{message.text}</p>
+                <div>
+                  {!isCurrentUser && (
+                    <p className="text-xs text-muted-foreground mb-1">
+                      {getUserName(message.sender)}
+                    </p>
+                  )}
+                  
+                  <div className={`p-3 rounded-lg ${
+                    isCurrentUser 
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'bg-muted'
+                  }`}>
+                    <p>{message.text}</p>
+                  </div>
+                  
+                  <p className="text-xs text-muted-foreground mt-1 text-right">
+                    {formatDistanceToNow(new Date(message.timestamp), { addSuffix: true })}
+                  </p>
                 </div>
-                
-                <p className="text-xs text-muted-foreground mt-1">
-                  {formatDistanceToNow(new Date(message.timestamp), { addSuffix: true })}
-                </p>
               </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })
+      )}
       <div ref={messagesEndRef} />
     </div>
   );
