@@ -12,27 +12,32 @@ import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
 import ProjectUpload from './pages/ProjectUpload';
 import MeetingScheduler from './pages/MeetingScheduler';
+import Chat from './pages/Chat';
 import { AuthProvider } from './context/AuthContext';
+import { NotificationsProvider } from './context/NotificationsContext';
 import { Toaster } from './components/ui/toaster';
 
 function App() {
   return (
     <Router>
       <AuthProvider>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/projects" element={<Projects />} />
-          <Route path="/projects/:id" element={<ProjectDetail />} />
-          <Route path="/tasks" element={<Tasks />} />
-          <Route path="/upload" element={<ProjectUpload />} />
-          <Route path="/meetings" element={<MeetingScheduler />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        <Toaster />
+        <NotificationsProvider>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/projects" element={<Projects />} />
+            <Route path="/projects/:id" element={<ProjectDetail />} />
+            <Route path="/tasks" element={<Tasks />} />
+            <Route path="/upload" element={<ProjectUpload />} />
+            <Route path="/meetings" element={<MeetingScheduler />} />
+            <Route path="/chat" element={<Chat />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <Toaster />
+        </NotificationsProvider>
       </AuthProvider>
     </Router>
   );
