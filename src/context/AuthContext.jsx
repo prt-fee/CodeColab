@@ -1,166 +1,105 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from '@/hooks/use-toast';
 
+// Create the context
 const AuthContext = createContext(null);
 
+// Initial mock user data
+const MOCK_USER = {
+  id: '1',
+  name: 'John Doe',
+  email: 'john@example.com',
+  avatar: 'https://randomuser.me/api/portraits/men/32.jpg'
+};
+
+// Provider component
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
+  // Check if user is already logged in
   useEffect(() => {
-    const initializeUser = () => {
-      try {
-        // Load user data from localStorage on initial load
-        const storedUser = localStorage.getItem('user');
-        
-        if (storedUser) {
-          try {
-            const parsedUser = JSON.parse(storedUser);
-            setUser(parsedUser);
-            console.log('User loaded from localStorage:', parsedUser);
-          } catch (error) {
-            console.error("Failed to parse user data:", error);
-            localStorage.removeItem('user');
-            setDefaultUser();
-          }
-        } else {
-          setDefaultUser();
-        }
-      } catch (error) {
-        console.error("Error initializing auth:", error);
-        setDefaultUser();
-      } finally {
-        setLoading(false);
+    const checkAuth = () => {
+      const storedUser = localStorage.getItem('projectify_user');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
       }
+      setIsLoading(false);
     };
 
-    const setDefaultUser = () => {
-      // Set default user for demo
-      const defaultUser = {
-        id: '1',
-        name: 'Demo User',
-        email: 'demo@example.com',
-        avatar: 'https://i.pravatar.cc/150?img=30'
-      };
-      localStorage.setItem('user', JSON.stringify(defaultUser));
-      setUser(defaultUser);
-      console.log('Default user set:', defaultUser);
-    };
-
-    initializeUser();
+    checkAuth();
   }, []);
 
+  // Login function
   const login = (email, password) => {
-    // In a real app, this would validate with a backend
-    if (email && password) {
-      const userData = {
-        id: '1',
-        name: 'Demo User',
-        email: email,
-        avatar: 'https://i.pravatar.cc/150?img=30'
-      };
-      
-      localStorage.setItem('user', JSON.stringify(userData));
-      setUser(userData);
-      
-      toast({
-        title: "Login successful",
-        description: "Welcome back!",
-      });
-      
-      // Navigate to dashboard after successful login
-      navigate('/dashboard');
-      
-      return true;
+    setIsLoading(true);
+    
+    try {
+      // In a real app, you would validate credentials with your API
+      if (email && password) {
+        setUser(MOCK_USER);
+        localStorage.setItem('projectify_user', JSON.stringify(MOCK_USER));
+        setIsLoading(false);
+        return true;
+      } else {
+        throw new Error('Invalid credentials');
+      }
+    } catch (error) {
+      setIsLoading(false);
+      console.error('Login error:', error);
+      throw error;
     }
-    
-    toast({
-      title: "Login failed",
-      description: "Invalid email or password",
-      variant: "destructive",
-    });
-    
-    return false;
   };
 
+  // Register function
   const register = (name, email, password) => {
-    // In a real app, this would register with a backend
-    if (name && email && password) {
-      const userData = {
-        id: '1',
-        name: name,
-        email: email,
-        avatar: 'https://i.pravatar.cc/150?img=30'
-      };
-      
-      localStorage.setItem('user', JSON.stringify(userData));
-      setUser(userData);
-      
-      toast({
-        title: "Registration successful",
-        description: "Account created successfully",
-      });
-      
-      // Navigate to dashboard after successful registration
-      navigate('/dashboard');
-      
-      return true;
+    setIsLoading(true);
+    
+    try {
+      // In a real app, you would register the user with your API
+      if (name && email && password) {
+        const newUser = { ...MOCK_USER, name, email };
+        setUser(newUser);
+        localStorage.setItem('projectify_user', JSON.stringify(newUser));
+        setIsLoading(false);
+        return true;
+      } else {
+        throw new Error('Invalid registration data');
+      }
+    } catch (error) {
+      setIsLoading(false);
+      console.error('Registration error:', error);
+      throw error;
     }
-    
-    toast({
-      title: "Registration failed",
-      description: "Please fill all required fields",
-      variant: "destructive",
-    });
-    
-    return false;
   };
 
+  // Logout function
   const logout = () => {
-    localStorage.removeItem('user');
     setUser(null);
-    
-    toast({
-      title: "Logged out",
-      description: "You have been logged out successfully",
-    });
-    
-    // Navigate to home or login page after logout
-    navigate('/');
-  };
-
-  const updateUser = (userData) => {
-    const updatedUser = { ...user, ...userData };
-    localStorage.setItem('user', JSON.stringify(updatedUser));
-    setUser(updatedUser);
-    
-    toast({
-      title: "Profile updated",
-      description: "Your profile has been updated successfully",
-    });
+    localStorage.removeItem('projectify_user');
+    navigate('/login');
   };
 
   return (
     <AuthContext.Provider value={{ 
       user, 
-      loading, 
+      isAuthenticated: !!user, 
+      loading: isLoading, 
       login, 
       register, 
-      logout, 
-      updateUser,
-      isAuthenticated: !!user
+      logout 
     }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
+// Custom hook to use the auth context
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === null) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;

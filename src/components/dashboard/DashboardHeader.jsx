@@ -1,23 +1,12 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Plus, FileText, KanbanSquare } from 'lucide-react';
-import { Dialog, DialogTrigger } from '@/components/ui/dialog';
-import NewProjectDialog from './NewProjectDialog';
 
 const DashboardHeader = () => {
   const { user } = useAuth();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [newProject, setNewProject] = useState({ name: '', description: '' });
-  
-  const handleCreateProject = (e) => {
-    e.preventDefault();
-    // Implementation will be handled by the parent component
-    console.log('Create project:', newProject);
-    setIsDialogOpen(false);
-  };
   
   return (
     <header className="mb-8">
@@ -37,28 +26,17 @@ const DashboardHeader = () => {
             </Button>
           </Link>
           
-          <Link to="/kanban">
+          <Link to="/projects">
             <Button variant="outline">
               <KanbanSquare className="mr-2 h-4 w-4" />
-              Kanban Board
+              Projects
             </Button>
           </Link>
           
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                New Project
-              </Button>
-            </DialogTrigger>
-            <NewProjectDialog 
-              isOpen={isDialogOpen}
-              onOpenChange={setIsDialogOpen}
-              newProject={newProject}
-              setNewProject={setNewProject}
-              onCreateProject={handleCreateProject}
-            />
-          </Dialog>
+          <Button onClick={() => window.location.href = "/projects"}>
+            <Plus className="mr-2 h-4 w-4" />
+            New Project
+          </Button>
         </div>
       </div>
     </header>

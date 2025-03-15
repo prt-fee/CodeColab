@@ -1,249 +1,267 @@
 
 import React, { useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
 import NavBar from '@/components/NavBar';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Loader2, UserCircle, Moon, Sun, Save, LogOut } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Separator } from '@/components/ui/separator';
+import { Loader2, Mail, User } from 'lucide-react';
 
 const Profile = () => {
-  const { user, updateUser, logout } = useAuth();
+  const { user, loading, logout } = useAuth();
   const navigate = useNavigate();
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [userProfile, setUserProfile] = useState({
+  
+  const [profileData, setProfileData] = useState({
     name: user?.name || '',
     email: user?.email || '',
-    avatar: user?.avatar || '',
-    bio: user?.bio || '',
+    avatar: user?.avatar || ''
   });
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
-
-  const handleUpdateProfile = () => {
-    setIsLoading(true);
+  
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+  
+  if (!user) {
+    navigate('/login');
+    return null;
+  }
+  
+  const handleProfileUpdate = (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    // Simulate API call
     setTimeout(() => {
-      updateUser(userProfile);
+      // Update user in localStorage
+      const updatedUser = { ...user, ...profileData };
+      localStorage.setItem('projectify_user', JSON.stringify(updatedUser));
+      
       toast({
         title: "Profile updated",
         description: "Your profile has been updated successfully"
       });
-      setIsLoading(false);
-    }, 800);
+      
+      setIsSubmitting(false);
+      window.location.reload(); // Reload to see the updated profile
+    }, 1000);
   };
-
-  const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
-    // Here you would implement actual theme toggling
-    toast({
-      title: `${!isDarkMode ? 'Dark' : 'Light'} mode activated`,
-      description: "Your theme preference has been saved"
-    });
+  
+  const handlePasswordChange = (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast({
+        title: "Passwords don't match",
+        description: "New password and confirmation must match",
+        variant: "destructive"
+      });
+      setIsSubmitting(false);
+      return;
+    }
+    
+    if (passwordData.newPassword.length < 6) {
+      toast({
+        title: "Password too short",
+        description: "Password must be at least 6 characters long",
+        variant: "destructive"
+      });
+      setIsSubmitting(false);
+      return;
+    }
+    
+    // Simulate API call
+    setTimeout(() => {
+      toast({
+        title: "Password updated",
+        description: "Your password has been changed successfully"
+      });
+      
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+      
+      setIsSubmitting(false);
+    }, 1000);
   };
-
+  
   return (
     <div className="min-h-screen bg-background">
       <NavBar />
       <div className="container mx-auto py-6 px-4 md:px-6 pt-20">
         <header className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Your Profile</h1>
-          <p className="text-muted-foreground">Manage your account and preferences</p>
+          <h1 className="text-3xl font-bold mb-2">My Profile</h1>
+          <p className="text-muted-foreground">
+            Manage your account settings and profile information
+          </p>
         </header>
-
+        
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Profile Sidebar */}
-          <div className="md:col-span-1">
-            <Card>
-              <CardHeader className="text-center">
-                <div className="flex justify-center mb-4">
-                  {userProfile.avatar ? (
-                    <img 
-                      src={userProfile.avatar} 
-                      alt={userProfile.name} 
-                      className="h-24 w-24 rounded-full object-cover border-4 border-background"
-                    />
-                  ) : (
-                    <div className="h-24 w-24 rounded-full bg-primary/10 flex items-center justify-center">
-                      <UserCircle className="h-16 w-16 text-primary" />
-                    </div>
-                  )}
-                </div>
-                <CardTitle>{userProfile.name || 'Your Name'}</CardTitle>
-                <CardDescription>{userProfile.email || 'your.email@example.com'}</CardDescription>
-              </CardHeader>
-              <CardContent className="text-center">
-                <p className="text-muted-foreground text-sm">
-                  {userProfile.bio || 'No bio yet. Add a bio in your profile settings.'}
-                </p>
-              </CardContent>
-              <CardFooter>
-                <Button onClick={handleLogout} variant="outline" className="w-full">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Log out
-                </Button>
-              </CardFooter>
-            </Card>
-          </div>
-
-          {/* Main Content */}
-          <div className="md:col-span-2">
-            <Tabs defaultValue="general" className="w-full">
-              <TabsList className="mb-4">
-                <TabsTrigger value="general">General</TabsTrigger>
-                <TabsTrigger value="appearance">Appearance</TabsTrigger>
-                <TabsTrigger value="notifications">Notifications</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="general">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Profile Information</CardTitle>
-                    <CardDescription>
-                      Update your profile details
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Name</Label>
-                      <Input
-                        id="name"
-                        value={userProfile.name}
-                        onChange={(e) => setUserProfile({...userProfile, name: e.target.value})}
-                        placeholder="Your name"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={userProfile.email}
-                        onChange={(e) => setUserProfile({...userProfile, email: e.target.value})}
-                        placeholder="Your email"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="avatar">Avatar URL</Label>
-                      <Input
-                        id="avatar"
-                        value={userProfile.avatar}
-                        onChange={(e) => setUserProfile({...userProfile, avatar: e.target.value})}
-                        placeholder="https://example.com/your-avatar.jpg"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="bio">Bio</Label>
-                      <Input
-                        id="bio"
-                        value={userProfile.bio}
-                        onChange={(e) => setUserProfile({...userProfile, bio: e.target.value})}
-                        placeholder="Tell us about yourself"
-                      />
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button onClick={handleUpdateProfile} disabled={isLoading}>
-                      {isLoading ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <Save className="mr-2 h-4 w-4" />
-                          Save Changes
-                        </>
-                      )}
-                    </Button>
-                  </CardFooter>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="appearance">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Appearance</CardTitle>
-                    <CardDescription>
-                      Customize how the app looks and feels
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label htmlFor="dark-mode">Dark Mode</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Switch between dark and light themes
-                        </p>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Sun className={`h-4 w-4 ${!isDarkMode ? 'text-primary' : 'text-muted-foreground'}`} />
-                        <Switch
-                          id="dark-mode"
-                          checked={isDarkMode}
-                          onCheckedChange={toggleTheme}
+          <Card className="md:col-span-1">
+            <CardContent className="p-6 flex flex-col items-center">
+              <Avatar className="h-32 w-32 mb-4">
+                <AvatarImage src={user.avatar} alt={user.name} />
+                <AvatarFallback className="text-4xl">{user.name.charAt(0)}</AvatarFallback>
+              </Avatar>
+              <h2 className="text-xl font-bold mb-1">{user.name}</h2>
+              <p className="text-muted-foreground text-sm mb-4">{user.email}</p>
+              <Button variant="outline" className="w-full" onClick={logout}>
+                Sign Out
+              </Button>
+            </CardContent>
+          </Card>
+          
+          <Card className="md:col-span-2">
+            <CardHeader>
+              <CardTitle>Account Settings</CardTitle>
+              <CardDescription>
+                Update your profile information and password
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="profile">
+                <TabsList className="mb-6 grid w-full grid-cols-2">
+                  <TabsTrigger value="profile">Profile</TabsTrigger>
+                  <TabsTrigger value="password">Password</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="profile">
+                  <form onSubmit={handleProfileUpdate}>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label htmlFor="name" className="font-medium text-sm flex items-center">
+                          <User className="h-4 w-4 mr-2" />
+                          Full Name
+                        </label>
+                        <Input
+                          id="name"
+                          value={profileData.name}
+                          onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                          placeholder="Your name"
+                          required
                         />
-                        <Moon className={`h-4 w-4 ${isDarkMode ? 'text-primary' : 'text-muted-foreground'}`} />
                       </div>
-                    </div>
-                    <Separator />
-                    {/* Additional appearance settings could go here */}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="notifications">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Notification Settings</CardTitle>
-                    <CardDescription>
-                      Choose what notifications you want to receive
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label htmlFor="task-reminders">Task Reminders</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Get notifications about upcoming tasks
-                        </p>
+                      
+                      <div className="space-y-2">
+                        <label htmlFor="email" className="font-medium text-sm flex items-center">
+                          <Mail className="h-4 w-4 mr-2" />
+                          Email Address
+                        </label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={profileData.email}
+                          onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
+                          placeholder="Your email"
+                          required
+                        />
                       </div>
-                      <Switch id="task-reminders" defaultChecked />
-                    </div>
-                    <Separator />
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label htmlFor="project-updates">Project Updates</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Receive updates about your projects
-                        </p>
+                      
+                      <div className="space-y-2">
+                        <label htmlFor="avatar" className="font-medium text-sm">
+                          Avatar URL
+                        </label>
+                        <Input
+                          id="avatar"
+                          value={profileData.avatar}
+                          onChange={(e) => setProfileData({ ...profileData, avatar: e.target.value })}
+                          placeholder="https://example.com/avatar.jpg"
+                        />
                       </div>
-                      <Switch id="project-updates" defaultChecked />
+                      
+                      <Button type="submit" disabled={isSubmitting} className="w-full">
+                        {isSubmitting ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Updating...
+                          </>
+                        ) : (
+                          'Update Profile'
+                        )}
+                      </Button>
                     </div>
-                    <Separator />
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label htmlFor="team-messages">Team Messages</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Get notified when team members send messages
-                        </p>
+                  </form>
+                </TabsContent>
+                
+                <TabsContent value="password">
+                  <form onSubmit={handlePasswordChange}>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label htmlFor="currentPassword" className="font-medium text-sm">
+                          Current Password
+                        </label>
+                        <Input
+                          id="currentPassword"
+                          type="password"
+                          value={passwordData.currentPassword}
+                          onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                          placeholder="Enter current password"
+                          required
+                        />
                       </div>
-                      <Switch id="team-messages" defaultChecked />
+                      
+                      <div className="space-y-2">
+                        <label htmlFor="newPassword" className="font-medium text-sm">
+                          New Password
+                        </label>
+                        <Input
+                          id="newPassword"
+                          type="password"
+                          value={passwordData.newPassword}
+                          onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                          placeholder="Enter new password"
+                          required
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label htmlFor="confirmPassword" className="font-medium text-sm">
+                          Confirm New Password
+                        </label>
+                        <Input
+                          id="confirmPassword"
+                          type="password"
+                          value={passwordData.confirmPassword}
+                          onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                          placeholder="Confirm new password"
+                          required
+                        />
+                      </div>
+                      
+                      <Button type="submit" disabled={isSubmitting} className="w-full">
+                        {isSubmitting ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Updating...
+                          </>
+                        ) : (
+                          'Change Password'
+                        )}
+                      </Button>
                     </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          </div>
+                  </form>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

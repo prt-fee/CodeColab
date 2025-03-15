@@ -47,11 +47,6 @@ const useDashboard = () => {
   const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [newProject, setNewProject] = useState({
-    name: '',
-    description: ''
-  });
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
     // Load projects from localStorage if available
@@ -88,63 +83,13 @@ const useDashboard = () => {
     }
   }, [projects, isLoading]);
 
-  const handleCreateProject = (e) => {
-    e.preventDefault();
-    
-    if (!newProject.name) {
-      toast({
-        title: "Error",
-        description: "Project name is required",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    const newProjectData = {
-      id: Date.now().toString(),
-      title: newProject.name,
-      description: newProject.description,
-      color: 'blue',
-      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-      members: 1,
-      tasksCount: {
-        total: 0,
-        completed: 0
-      },
-      files: [],
-      meetings: [],
-      commits: [],
-      pullRequests: []
-    };
-    
-    const updatedProjects = [...projects, newProjectData];
-    setProjects(updatedProjects);
-    localStorage.setItem('user_projects', JSON.stringify(updatedProjects));
-    
-    toast({
-      title: "Success",
-      description: "Project created successfully",
-    });
-    
-    setNewProject({ name: '', description: '' });
-    setIsDialogOpen(false);
-    
-    // Navigate to the new project
-    navigate(`/project/${newProjectData.id}`);
-  };
-
   const handleProjectClick = (projectId) => {
-    navigate(`/project/${projectId}`);
+    navigate(`/projects/${projectId}`);
   };
 
   return {
     projects,
     isLoading,
-    newProject,
-    setNewProject,
-    isDialogOpen,
-    setIsDialogOpen,
-    handleCreateProject,
     handleProjectClick
   };
 };

@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { toast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 // Initial mock projects data
 const mockProjects = [
@@ -43,110 +43,45 @@ const mockProjects = [
 ];
 
 const useProjects = () => {
+  const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [newProject, setNewProject] = useState({
-    name: '',
-    description: ''
-  });
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Load projects on initial render
   useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        // Simulate API call
-        const timer = setTimeout(() => {
-          // Check if projects exist in local storage
-          const storedProjects = localStorage.getItem('projectify_projects');
-          if (storedProjects) {
-            setProjects(JSON.parse(storedProjects));
+    // Load projects from localStorage if available
+    const savedProjects = localStorage.getItem('user_projects');
+    
+    const timer = setTimeout(() => {
+      if (savedProjects) {
+        try {
+          const parsedProjects = JSON.parse(savedProjects);
+          // Ensure the data is in the expected format
+          if (Array.isArray(parsedProjects)) {
+            setProjects(parsedProjects);
           } else {
+            console.warn('Saved projects is not an array, using mock data');
             setProjects(mockProjects);
-            // Store mock projects in localStorage
-            localStorage.setItem('projectify_projects', JSON.stringify(mockProjects));
           }
-          setIsLoading(false);
-        }, 800);
-
-        return () => clearTimeout(timer);
-      } catch (error) {
-        console.error('Error fetching projects:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load projects",
-          variant: "destructive"
-        });
-        setIsLoading(false);
+        } catch (e) {
+          console.error('Failed to parse saved projects', e);
+          setProjects(mockProjects);
+        }
+      } else {
+        setProjects(mockProjects);
       }
-    };
-
-    fetchProjects();
+      setIsLoading(false);
+    }, 1000);
+    
+    return () => clearTimeout(timer);
   }, []);
 
-  // Filter projects based on search term
-  const filteredProjects = projects.filter(project => {
-    return project.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-           (project.description && project.description.toLowerCase().includes(searchTerm.toLowerCase()));
-  });
-
-  // Create a new project
-  const createProject = (e) => {
-    e.preventDefault();
-    
-    if (!newProject.name) {
-      toast({
-        title: "Error",
-        description: "Project name is required",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    const newProjectData = {
-      id: Date.now().toString(),
-      title: newProject.name,
-      description: newProject.description,
-      color: 'blue',
-      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-      members: 1,
-      tasksCount: {
-        total: 0,
-        completed: 0
-      }
-    };
-    
-    const updatedProjects = [...projects, newProjectData];
-    setProjects(updatedProjects);
-    
-    // Update localStorage
-    localStorage.setItem('projectify_projects', JSON.stringify(updatedProjects));
-    
-    toast({
-      title: "Success",
-      description: "Project created successfully",
-    });
-    
-    setNewProject({ name: '', description: '' });
-    setIsDialogOpen(false);
-  };
-
-  // Navigate to project detail
   const navigateToProject = (projectId) => {
-    window.location.href = `/project/${projectId}`;
+    navigate(`/projects/${projectId}`);
   };
 
   return {
-    projects: filteredProjects,
+    projects,
     isLoading,
-    searchTerm,
-    setSearchTerm,
-    newProject,
-    setNewProject,
-    isDialogOpen,
-    setIsDialogOpen,
-    createProject,
     navigateToProject
   };
 };

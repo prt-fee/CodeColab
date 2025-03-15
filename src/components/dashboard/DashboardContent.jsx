@@ -5,18 +5,12 @@ import { useTaskManager } from '@/hooks/useTaskManager';
 import StatsCards from '@/components/dashboard/StatsCards';
 import ProjectsList from '@/components/dashboard/ProjectsList';
 import RecentTasks from '@/components/dashboard/RecentTasks';
-import NewProjectDialog from '@/components/dashboard/NewProjectDialog';
 import useDashboard from '@/hooks/useDashboard';
 
 const DashboardContent = () => {
   const {
     projects,
     isLoading,
-    newProject,
-    setNewProject,
-    isDialogOpen,
-    setIsDialogOpen,
-    handleCreateProject,
     handleProjectClick
   } = useDashboard();
 
@@ -34,7 +28,7 @@ const DashboardContent = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -50,19 +44,11 @@ const DashboardContent = () => {
       
       <ProjectsList 
         projects={projects}
-        onCreateClick={() => setIsDialogOpen(true)}
+        onCreateClick={() => window.location.href = "/projects"}
         onProjectClick={handleProjectClick}
       />
       
       <RecentTasks tasks={tasks} />
-      
-      <NewProjectDialog 
-        isOpen={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        newProject={newProject}
-        setNewProject={setNewProject}
-        onCreateProject={handleCreateProject}
-      />
     </>
   );
 };

@@ -6,13 +6,11 @@ import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
 import Tasks from './pages/Tasks';
-import KanbanBoard from './pages/KanbanBoard';
-import MeetingScheduler from './pages/MeetingScheduler';
-import ProjectUpload from './pages/ProjectUpload';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
+import ProjectUpload from './pages/ProjectUpload';
 import { AuthProvider } from './context/AuthContext';
 import { Toaster } from './components/ui/toaster';
 
@@ -24,10 +22,8 @@ function App() {
           <Route path="/" element={<Index />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/projects" element={<Projects />} />
-          <Route path="/projects/:projectId" element={<ProjectDetail />} />
+          <Route path="/projects/:id" element={<ProjectDetail />} />
           <Route path="/tasks" element={<Tasks />} />
-          <Route path="/kanban" element={<KanbanBoard />} />
-          <Route path="/meetings" element={<MeetingScheduler />} />
           <Route path="/upload" element={<ProjectUpload />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
