@@ -65,6 +65,7 @@ const ProjectDetailTabs = ({
       <TabsContent value="team">
         <TeamPanel 
           members={project.members || []} 
+          projectTitle={project.title}
         />
       </TabsContent>
 

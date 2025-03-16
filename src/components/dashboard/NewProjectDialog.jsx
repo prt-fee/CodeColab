@@ -13,7 +13,6 @@ import { cn } from '@/lib/utils';
 import { CalendarIcon, CheckIcon, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
-import { useNotifications } from '@/context/NotificationsContext';
 
 const projectTemplates = [
   { id: 'web', name: 'Web Development', icon: '🌐', description: 'Create a web application with frontend and backend components' },
@@ -32,9 +31,8 @@ const colorOptions = [
   { id: 'cyan', label: 'Cyan', value: 'cyan', color: 'bg-cyan-500' },
 ];
 
-const NewProjectDialog = ({ isOpen, onOpenChange, newProject, setNewProject, onCreateProject }) => {
+const NewProjectDialog = ({ open, onClose, onCreateProject }) => {
   const navigate = useNavigate();
-  const { addNotification } = useNotifications();
   
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -49,17 +47,6 @@ const NewProjectDialog = ({ isOpen, onOpenChange, newProject, setNewProject, onC
   });
   
   const [isCreating, setIsCreating] = useState(false);
-  
-  // Update form data when props change
-  React.useEffect(() => {
-    if (newProject) {
-      setFormData(prev => ({
-        ...prev,
-        title: newProject.name || '',
-        description: newProject.description || ''
-      }));
-    }
-  }, [newProject]);
   
   const updateFormData = (field, value) => {
     setFormData({
@@ -106,8 +93,6 @@ const NewProjectDialog = ({ isOpen, onOpenChange, newProject, setNewProject, onC
       const newProject = {
         id: projectId,
         ...formData,
-        title: formData.title,
-        description: formData.description,
         createdAt: new Date(),
         tasksCount: {
           total: 0,
@@ -127,12 +112,6 @@ const NewProjectDialog = ({ isOpen, onOpenChange, newProject, setNewProject, onC
       // Save to localStorage
       localStorage.setItem('user_projects', JSON.stringify(updatedProjects));
       
-      // Add activity notification
-      addNotification({
-        type: 'project',
-        message: `New project "${formData.title}" has been created`,
-      });
-      
       // Call the onCreateProject callback if provided
       if (onCreateProject) {
         onCreateProject(newProject);
@@ -145,7 +124,7 @@ const NewProjectDialog = ({ isOpen, onOpenChange, newProject, setNewProject, onC
       });
       
       // Close dialog
-      onOpenChange(false);
+      onClose();
       
       // Navigate to the new project
       navigate(`/projects/${projectId}`);
@@ -174,11 +153,11 @@ const NewProjectDialog = ({ isOpen, onOpenChange, newProject, setNewProject, onC
       tags: []
     });
     setStep(1);
-    onOpenChange(false);
+    onClose();
   };
   
   return (
-    <Dialog open={isOpen} onOpenChange={handleDialogClose}>
+    <Dialog open={open} onOpenChange={handleDialogClose}>
       <DialogContent className="sm:max-w-[600px] p-0">
         <DialogHeader className="p-6 pb-0">
           <DialogTitle className="text-2xl font-bold">
@@ -211,245 +190,251 @@ const NewProjectDialog = ({ isOpen, onOpenChange, newProject, setNewProject, onC
         
         <form onSubmit={handleSubmit} className="space-y-4 px-6 py-4">
           {step === 1 && (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Project title *</Label>
-                <Input 
-                  id="title" 
-                  value={formData.title}
-                  onChange={(e) => updateFormData('title', e.target.value)}
-                  placeholder="Enter project title"
-                  required
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea 
-                  id="description" 
-                  value={formData.description}
-                  onChange={(e) => updateFormData('description', e.target.value)}
-                  placeholder="Brief description of the project"
-                  rows={3}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Project color</Label>
-                <div className="flex flex-wrap gap-2">
-                  {colorOptions.map((color) => (
-                    <button
-                      key={color.id}
-                      type="button"
-                      className={`w-8 h-8 rounded-full ${color.color} flex items-center justify-center transition-all ${formData.color === color.value ? 'ring-2 ring-offset-2 ring-primary' : 'opacity-70 hover:opacity-100'}`}
-                      onClick={() => updateFormData('color', color.value)}
-                      title={color.label}
-                    >
-                      {formData.color === color.value && <CheckIcon className="h-4 w-4 text-white" />}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Template *</Label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {projectTemplates.map((template) => (
-                    <div
-                      key={template.id}
-                      className={`border rounded-lg p-3 cursor-pointer transition-all ${formData.template === template.id ? 'border-primary bg-primary/5' : 'hover:bg-accent'}`}
-                      onClick={() => updateFormData('template', template.id)}
-                    >
-                      <div className="flex items-start">
-                        <div className="text-2xl mr-2">{template.icon}</div>
-                        <div>
-                          <h4 className="font-medium">{template.name}</h4>
-                          <p className="text-xs text-muted-foreground">{template.description}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {step === 2 && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <>
+              <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="startDate">Start date</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start text-left font-normal"
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {formData.startDate ? (
-                          format(formData.startDate, "PPP")
-                        ) : (
-                          <span>Pick a date</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={formData.startDate}
-                        onSelect={(date) => updateFormData('startDate', date)}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <Label htmlFor="title">Project title *</Label>
+                  <Input 
+                    id="title" 
+                    value={formData.title}
+                    onChange={(e) => updateFormData('title', e.target.value)}
+                    placeholder="Enter project title"
+                    required
+                  />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="dueDate">Due date</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start text-left font-normal"
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {formData.dueDate ? (
-                          format(formData.dueDate, "PPP")
-                        ) : (
-                          <span>Pick a date</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={formData.dueDate}
-                        onSelect={(date) => updateFormData('dueDate', date)}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea 
+                    id="description" 
+                    value={formData.description}
+                    onChange={(e) => updateFormData('description', e.target.value)}
+                    placeholder="Brief description of the project"
+                    rows={3}
+                  />
                 </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="members">Team members</Label>
-                <div className="flex items-center space-x-2">
-                  <Users className="h-5 w-5 text-muted-foreground" />
-                  <Select
-                    value={String(formData.members)}
-                    onValueChange={(value) => updateFormData('members', parseInt(value))}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select team size" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">Just me</SelectItem>
-                      <SelectItem value="2">2 members</SelectItem>
-                      <SelectItem value="3">3 members</SelectItem>
-                      <SelectItem value="4">4 members</SelectItem>
-                      <SelectItem value="5">5+ members</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="tags">Tags</Label>
-                <div className="flex flex-wrap gap-2">
-                  {['Development', 'Design', 'Marketing', 'Research', 'Planning'].map((tag) => {
-                    const isSelected = formData.tags.includes(tag);
-                    return (
+                
+                <div className="space-y-2">
+                  <Label>Project color</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {colorOptions.map((color) => (
                       <button
-                        key={tag}
+                        key={color.id}
                         type="button"
-                        className={`px-3 py-1 text-sm rounded-full transition-colors ${
-                          isSelected 
-                            ? 'bg-primary text-primary-foreground' 
-                            : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-                        }`}
-                        onClick={() => {
-                          if (isSelected) {
-                            updateFormData('tags', formData.tags.filter(t => t !== tag));
-                          } else {
-                            updateFormData('tags', [...formData.tags, tag]);
-                          }
-                        }}
+                        className={`w-8 h-8 rounded-full ${color.color} flex items-center justify-center transition-all ${formData.color === color.value ? 'ring-2 ring-offset-2 ring-primary' : 'opacity-70 hover:opacity-100'}`}
+                        onClick={() => updateFormData('color', color.value)}
+                        title={color.label}
                       >
-                        {tag}
+                        {formData.color === color.value && <CheckIcon className="h-4 w-4 text-white" />}
                       </button>
-                    );
-                  })}
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Template *</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {projectTemplates.map((template) => (
+                      <div
+                        key={template.id}
+                        className={`border rounded-lg p-3 cursor-pointer transition-all ${formData.template === template.id ? 'border-primary bg-primary/5' : 'hover:bg-accent'}`}
+                        onClick={() => updateFormData('template', template.id)}
+                      >
+                        <div className="flex items-start">
+                          <div className="text-2xl mr-2">{template.icon}</div>
+                          <div>
+                            <h4 className="font-medium">{template.name}</h4>
+                            <p className="text-xs text-muted-foreground">{template.description}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
+            </>
+          )}
+          
+          {step === 2 && (
+            <>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="startDate">Start date</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start text-left font-normal"
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {formData.startDate ? (
+                            format(formData.startDate, "PPP")
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={formData.startDate}
+                          onSelect={(date) => updateFormData('startDate', date)}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="dueDate">Due date</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start text-left font-normal"
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {formData.dueDate ? (
+                            format(formData.dueDate, "PPP")
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={formData.dueDate}
+                          onSelect={(date) => updateFormData('dueDate', date)}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="members">Team members</Label>
+                  <div className="flex items-center space-x-2">
+                    <Users className="h-5 w-5 text-muted-foreground" />
+                    <Select
+                      value={String(formData.members)}
+                      onValueChange={(value) => updateFormData('members', parseInt(value))}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select team size" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">Just me</SelectItem>
+                        <SelectItem value="2">2 members</SelectItem>
+                        <SelectItem value="3">3 members</SelectItem>
+                        <SelectItem value="4">4 members</SelectItem>
+                        <SelectItem value="5">5+ members</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="tags">Tags</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {['Development', 'Design', 'Marketing', 'Research', 'Planning'].map((tag) => {
+                      const isSelected = formData.tags.includes(tag);
+                      return (
+                        <button
+                          key={tag}
+                          type="button"
+                          className={`px-3 py-1 text-sm rounded-full transition-colors ${
+                            isSelected 
+                              ? 'bg-primary text-primary-foreground' 
+                              : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                          }`}
+                          onClick={() => {
+                            if (isSelected) {
+                              updateFormData('tags', formData.tags.filter(t => t !== tag));
+                            } else {
+                              updateFormData('tags', [...formData.tags, tag]);
+                            }
+                          }}
+                        >
+                          {tag}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </>
           )}
           
           {step === 3 && (
-            <div className="space-y-6">
-              <div className="bg-accent/50 p-4 rounded-lg">
-                <h3 className="font-semibold text-lg mb-3">Project Summary</h3>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Title:</span>
-                    <span className="font-medium">{formData.title}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Template:</span>
-                    <span className="font-medium">
-                      {projectTemplates.find(t => t.id === formData.template)?.name || 'Custom'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Duration:</span>
-                    <span className="font-medium">
-                      {format(formData.startDate, "MMM d")} - {format(formData.dueDate, "MMM d, yyyy")}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Team size:</span>
-                    <span className="font-medium">{formData.members} {formData.members === 1 ? 'member' : 'members'}</span>
-                  </div>
-                  {formData.tags.length > 0 && (
-                    <div className="flex flex-col">
-                      <span className="text-muted-foreground mb-1">Tags:</span>
-                      <div className="flex flex-wrap gap-1 justify-end">
-                        {formData.tags.map(tag => (
-                          <span key={tag} className="px-2 py-0.5 bg-secondary text-xs rounded">
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
+            <>
+              <div className="space-y-6">
+                <div className="bg-accent/50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-lg mb-3">Project Summary</h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Title:</span>
+                      <span className="font-medium">{formData.title}</span>
                     </div>
-                  )}
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Template:</span>
+                      <span className="font-medium">
+                        {projectTemplates.find(t => t.id === formData.template)?.name || 'Custom'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Duration:</span>
+                      <span className="font-medium">
+                        {format(formData.startDate, "MMM d")} - {format(formData.dueDate, "MMM d, yyyy")}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Team size:</span>
+                      <span className="font-medium">{formData.members} {formData.members === 1 ? 'member' : 'members'}</span>
+                    </div>
+                    {formData.tags.length > 0 && (
+                      <div className="flex flex-col">
+                        <span className="text-muted-foreground mb-1">Tags:</span>
+                        <div className="flex flex-wrap gap-1 justify-end">
+                          {formData.tags.map(tag => (
+                            <span key={tag} className="px-2 py-0.5 bg-secondary text-xs rounded">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="bg-accent/50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-lg mb-2">What happens next?</h3>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    After creating your project, you'll be redirected to the project dashboard where you can:
+                  </p>
+                  <ul className="text-sm space-y-1">
+                    <li className="flex items-center">
+                      <CheckIcon className="h-4 w-4 text-green-500 mr-2" />
+                      Add tasks and assign them to team members
+                    </li>
+                    <li className="flex items-center">
+                      <CheckIcon className="h-4 w-4 text-green-500 mr-2" />
+                      Schedule meetings and set milestones
+                    </li>
+                    <li className="flex items-center">
+                      <CheckIcon className="h-4 w-4 text-green-500 mr-2" />
+                      Create and edit project files
+                    </li>
+                    <li className="flex items-center">
+                      <CheckIcon className="h-4 w-4 text-green-500 mr-2" />
+                      Track progress and view project statistics
+                    </li>
+                  </ul>
                 </div>
               </div>
-              
-              <div className="bg-accent/50 p-4 rounded-lg">
-                <h3 className="font-semibold text-lg mb-2">What happens next?</h3>
-                <p className="text-sm text-muted-foreground mb-3">
-                  After creating your project, you'll be redirected to the project dashboard where you can:
-                </p>
-                <ul className="text-sm space-y-1">
-                  <li className="flex items-center">
-                    <CheckIcon className="h-4 w-4 text-green-500 mr-2" />
-                    Add tasks and assign them to team members
-                  </li>
-                  <li className="flex items-center">
-                    <CheckIcon className="h-4 w-4 text-green-500 mr-2" />
-                    Schedule meetings and set milestones
-                  </li>
-                  <li className="flex items-center">
-                    <CheckIcon className="h-4 w-4 text-green-500 mr-2" />
-                    Create and edit project files
-                  </li>
-                  <li className="flex items-center">
-                    <CheckIcon className="h-4 w-4 text-green-500 mr-2" />
-                    Track progress and view project statistics
-                  </li>
-                </ul>
-              </div>
-            </div>
+            </>
           )}
         </form>
         
