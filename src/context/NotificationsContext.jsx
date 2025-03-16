@@ -1,5 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from './AuthContext';
 import { toast } from '@/hooks/use-toast';
 
 const NotificationsContext = createContext();
@@ -7,30 +8,50 @@ const NotificationsContext = createContext();
 export const useNotifications = () => useContext(NotificationsContext);
 
 export const NotificationsProvider = ({ children }) => {
+  const { user } = useAuth();
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // Load notifications from localStorage on initial render
+  // Mock fetch notifications - in a real app, you'd fetch from an API
   useEffect(() => {
-    const storedNotifications = localStorage.getItem('user_notifications');
-    if (storedNotifications) {
-      try {
-        const parsedNotifications = JSON.parse(storedNotifications);
-        setNotifications(parsedNotifications);
-        
-        // Calculate unread count
-        const unread = parsedNotifications.filter(n => !n.read).length;
-        setUnreadCount(unread);
-      } catch (error) {
-        console.error('Error parsing notifications:', error);
-      }
+    if (user) {
+      // Simulating getting notifications from server
+      const mockNotifications = [
+        {
+          id: '1',
+          type: 'invitation',
+          message: 'John invited you to join Project Alpha',
+          read: false,
+          createdAt: new Date().toISOString(),
+          sender: {
+            id: 'user123',
+            name: 'John Doe',
+            avatar: ''
+          },
+          relatedProject: 'project123'
+        },
+        {
+          id: '2',
+          type: 'message',
+          message: 'New message in Project Beta chat',
+          read: true,
+          createdAt: new Date(Date.now() - 3600000).toISOString(),
+          sender: {
+            id: 'user456',
+            name: 'Jane Smith',
+            avatar: ''
+          },
+          relatedProject: 'project456'
+        }
+      ];
+      
+      setNotifications(mockNotifications);
+      
+      // Calculate unread count
+      const unread = mockNotifications.filter(n => !n.read).length;
+      setUnreadCount(unread);
     }
-  }, []);
-
-  // Save notifications to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem('user_notifications', JSON.stringify(notifications));
-  }, [notifications]);
+  }, [user]);
 
   const markAsRead = (notificationId) => {
     setNotifications(prev => 
@@ -65,18 +86,9 @@ export const NotificationsProvider = ({ children }) => {
     
     // Show toast notification
     toast({
-      title: notification.type.charAt(0).toUpperCase() + notification.type.slice(1),
-      description: notification.message,
+      title: newNotification.type.charAt(0).toUpperCase() + newNotification.type.slice(1),
+      description: newNotification.message,
     });
-  };
-
-  const removeNotification = (notificationId) => {
-    const notification = notifications.find(n => n.id === notificationId);
-    if (notification && !notification.read) {
-      setUnreadCount(prev => Math.max(0, prev - 1));
-    }
-    
-    setNotifications(prev => prev.filter(n => n.id !== notificationId));
   };
 
   const respondToInvitation = (notificationId, accept) => {
@@ -88,6 +100,7 @@ export const NotificationsProvider = ({ children }) => {
       markAsRead(notificationId);
       
       // In a real app, you would make an API call here
+      // For now, we'll just show a toast
       if (accept) {
         toast({
           title: "Invitation Accepted",
@@ -101,21 +114,8 @@ export const NotificationsProvider = ({ children }) => {
       }
       
       // Remove the notification from the list
-      removeNotification(notificationId);
+      setNotifications(prev => prev.filter(n => n.id !== notificationId));
     }
-  };
-
-  // Add this function to track team member additions
-  const notifyTeamMemberAdded = (memberName, memberEmail, projectTitle) => {
-    addNotification({
-      type: 'team',
-      message: `${memberName} (${memberEmail}) has been added to project: ${projectTitle}`,
-      sender: {
-        id: 'system',
-        name: 'System',
-        avatar: ''
-      }
-    });
   };
 
   return (
@@ -125,13 +125,9 @@ export const NotificationsProvider = ({ children }) => {
       markAsRead,
       markAllAsRead,
       addNotification,
-      removeNotification,
-      respondToInvitation,
-      notifyTeamMemberAdded
+      respondToInvitation
     }}>
       {children}
     </NotificationsContext.Provider>
   );
 };
-
-export default NotificationsProvider;
