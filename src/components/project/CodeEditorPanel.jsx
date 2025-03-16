@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Save, Code } from 'lucide-react';
@@ -16,6 +16,13 @@ import { toast } from '@/hooks/use-toast';
 const CodeEditor = ({ file, onSave }) => {
   const [content, setContent] = useState(file?.content || '');
   const [theme, setTheme] = useState('eclipse');
+
+  // Update content when file changes
+  useEffect(() => {
+    if (file) {
+      setContent(file.content || '');
+    }
+  }, [file]);
 
   const getLanguage = (fileType) => {
     switch (fileType) {
@@ -82,15 +89,15 @@ const CodeEditorPanel = ({ files, selectedFile, setSelectedFile, onSaveFile, onN
     <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
       <div className="md:col-span-1 space-y-4">
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-3">
             <CardTitle>Files</CardTitle>
-            <div className="flex justify-between items-center">
-              <Button variant="ghost" size="sm" onClick={onNewFileClick}>
+            <div className="flex justify-between items-center mt-2">
+              <Button variant="outline" size="sm" onClick={onNewFileClick}>
                 <Code className="h-4 w-4 mr-2" />
                 New
               </Button>
               
-              <Button variant="ghost" size="sm" onClick={onCommitClick}>
+              <Button variant="outline" size="sm" onClick={onCommitClick}>
                 <Code className="h-4 w-4 mr-2" />
                 Commit
               </Button>
@@ -106,10 +113,15 @@ const CodeEditorPanel = ({ files, selectedFile, setSelectedFile, onSaveFile, onN
                 >
                   <div className="flex items-center gap-2">
                     <Code className="h-4 w-4" />
-                    <span>{file.name}</span>
+                    <span className="truncate">{file.name}</span>
                   </div>
                 </li>
               ))}
+              {files.length === 0 && (
+                <li className="text-muted-foreground text-center py-2">
+                  No files yet. Create a new file.
+                </li>
+              )}
             </ul>
           </CardContent>
         </Card>
@@ -125,7 +137,11 @@ const CodeEditorPanel = ({ files, selectedFile, setSelectedFile, onSaveFile, onN
               <CodeEditor file={selectedFile} onSave={onSaveFile} />
             ) : (
               <div className="text-center py-8">
-                <p className="text-muted-foreground mb-4">Select a file to edit</p>
+                <p className="text-muted-foreground mb-4">Select a file to edit or create a new file</p>
+                <Button onClick={onNewFileClick} variant="outline">
+                  <Code className="h-4 w-4 mr-2" />
+                  Create New File
+                </Button>
               </div>
             )}
           </CardContent>

@@ -12,7 +12,7 @@ import { toast } from '@/hooks/use-toast';
 import { Loader2, Mail, User } from 'lucide-react';
 
 const Profile = () => {
-  const { user, loading, logout } = useAuth();
+  const { user, loading, logout, updateUser } = useAuth();
   const navigate = useNavigate();
   
   const [profileData, setProfileData] = useState({
@@ -46,20 +46,21 @@ const Profile = () => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      // Update user in localStorage
-      const updatedUser = { ...user, ...profileData };
-      localStorage.setItem('projectify_user', JSON.stringify(updatedUser));
-      
+    // Use the updateUser function from AuthContext
+    if (updateUser(profileData)) {
       toast({
         title: "Profile updated",
         description: "Your profile has been updated successfully"
       });
-      
-      setIsSubmitting(false);
-      window.location.reload(); // Reload to see the updated profile
-    }, 1000);
+    } else {
+      toast({
+        title: "Update failed",
+        description: "There was an error updating your profile",
+        variant: "destructive"
+      });
+    }
+    
+    setIsSubmitting(false);
   };
   
   const handlePasswordChange = (e) => {

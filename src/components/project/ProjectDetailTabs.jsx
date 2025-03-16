@@ -28,7 +28,6 @@ const ProjectDetailTabs = ({
         <TabsTrigger value="stats">Statistics</TabsTrigger>
         <TabsTrigger value="team">Team</TabsTrigger>
         <TabsTrigger value="commits">Commits</TabsTrigger>
-        <TabsTrigger value="pulls">Pull Requests</TabsTrigger>
       </TabsList>
       
       <TabsContent value="code">
@@ -72,13 +71,6 @@ const ProjectDetailTabs = ({
           activeTab="commits"
           commits={project.commits || []}
           onNewCommitClick={onCommitClick}
-        />
-      </TabsContent>
-
-      <TabsContent value="pulls">
-        <VersionControlPanel 
-          activeTab="pulls"
-          pullRequests={project.pullRequests || []}
         />
       </TabsContent>
     </Tabs>

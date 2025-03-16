@@ -1,329 +1,476 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useNavigate } from 'react-router-dom';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { CalendarIcon, Plus, X, User, Users } from 'lucide-react';
-import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Checkbox } from '@/components/ui/checkbox';
+import { CalendarIcon, CheckIcon, Users } from 'lucide-react';
+import { format } from 'date-fns';
+import { toast } from '@/hooks/use-toast';
 
-const NewProjectDialog = ({ 
-  isOpen, 
-  onOpenChange, 
-  newProject = { 
-    name: '', 
-    description: '',
-    assignees: [],
-    manager: null,
-    startDate: null,
-    endDate: null,
-    category: 'uncategorized',
-    status: 'active'
-  }, 
-  setNewProject = () => {}, 
-  onCreateProject = () => {} 
-}) => {
+const projectTemplates = [
+  { id: 'web', name: 'Web Development', icon: '🌐', description: 'Create a web application with frontend and backend components' },
+  { id: 'mobile', name: 'Mobile App', icon: '📱', description: 'Develop a cross-platform mobile application' },
+  { id: 'design', name: 'Design Project', icon: '🎨', description: 'Create UI/UX designs and assets for digital products' },
+  { id: 'marketing', name: 'Marketing Campaign', icon: '📈', description: 'Plan and execute a marketing campaign across channels' },
+  { id: 'research', name: 'Research Project', icon: '🔬', description: 'Conduct research and document findings' }
+];
+
+const colorOptions = [
+  { id: 'blue', label: 'Blue', value: 'blue', color: 'bg-blue-500' },
+  { id: 'green', label: 'Green', value: 'green', color: 'bg-green-500' },
+  { id: 'purple', label: 'Purple', value: 'purple', color: 'bg-purple-500' },
+  { id: 'orange', label: 'Orange', value: 'orange', color: 'bg-orange-500' },
+  { id: 'pink', label: 'Pink', value: 'pink', color: 'bg-pink-500' },
+  { id: 'cyan', label: 'Cyan', value: 'cyan', color: 'bg-cyan-500' },
+];
+
+const NewProjectDialog = ({ open, onClose, onCreateProject }) => {
+  const navigate = useNavigate();
+  
   const [step, setStep] = useState(1);
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    template: '',
+    color: 'blue',
+    startDate: new Date(),
+    dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 2 weeks from now
+    members: 2,
+    tags: []
+  });
   
-  const handleNameChange = (e) => {
-    setNewProject({ ...newProject, name: e.target.value });
-  };
-
-  const handleDescriptionChange = (e) => {
-    setNewProject({ ...newProject, description: e.target.value });
-  };
+  const [isCreating, setIsCreating] = useState(false);
   
-  const handleStartDateSelect = (date) => {
-    setNewProject({ ...newProject, startDate: date });
-  };
-  
-  const handleEndDateSelect = (date) => {
-    setNewProject({ ...newProject, endDate: date });
-  };
-  
-  const handleCategoryChange = (value) => {
-    setNewProject({ ...newProject, category: value });
-  };
-  
-  const handleStatusChange = (value) => {
-    setNewProject({ ...newProject, status: value });
-  };
-  
-  const handleAddAssignee = () => {
-    // Mock adding an assignee
-    const mockAssignee = {
-      id: Date.now().toString(),
-      name: 'AC',
-      avatar: ''
-    };
-    setNewProject({ 
-      ...newProject, 
-      assignees: [...(newProject.assignees || []), mockAssignee] 
+  const updateFormData = (field, value) => {
+    setFormData({
+      ...formData,
+      [field]: value
     });
   };
   
-  const handleRemoveAssignee = (assigneeId) => {
-    setNewProject({
-      ...newProject,
-      assignees: newProject.assignees.filter(a => a.id !== assigneeId)
-    });
-  };
-  
-  const handleSetManager = () => {
-    // Mock adding a manager
-    const mockManager = {
-      id: Date.now().toString(),
-      name: 'PM',
-      avatar: ''
-    };
-    setNewProject({ ...newProject, manager: mockManager });
-  };
-  
-  const handleDialogClose = () => {
-    // Reset form when dialog closes
-    setStep(1);
-    onOpenChange(false);
-  };
-  
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onCreateProject(e);
-    setStep(1);
-  };
-
   const handleNext = () => {
-    if (step < 2) setStep(step + 1);
-    else handleSubmit({ preventDefault: () => {} });
+    if (step === 1) {
+      if (!formData.title.trim()) {
+        toast({
+          title: "Project title required",
+          description: "Please enter a title for your project",
+          variant: "destructive"
+        });
+        return;
+      }
+      if (!formData.template) {
+        toast({
+          title: "Template selection required",
+          description: "Please select a project template",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+    
+    setStep(step + 1);
   };
-
+  
+  const handleBack = () => {
+    setStep(step - 1);
+  };
+  
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsCreating(true);
+    
+    try {
+      // Generate a random ID for the project
+      const projectId = String(Date.now());
+      
+      const newProject = {
+        id: projectId,
+        ...formData,
+        createdAt: new Date(),
+        tasksCount: {
+          total: 0,
+          completed: 0
+        },
+        files: [],
+        meetings: [],
+        commits: []
+      };
+      
+      // Get existing projects from localStorage or initialize empty array
+      const existingProjects = JSON.parse(localStorage.getItem('user_projects') || '[]');
+      
+      // Add new project to array
+      const updatedProjects = [...existingProjects, newProject];
+      
+      // Save to localStorage
+      localStorage.setItem('user_projects', JSON.stringify(updatedProjects));
+      
+      // Call the onCreateProject callback if provided
+      if (onCreateProject) {
+        onCreateProject(newProject);
+      }
+      
+      // Success toast
+      toast({
+        title: "Project created",
+        description: `${formData.title} has been created successfully`,
+      });
+      
+      // Close dialog
+      onClose();
+      
+      // Navigate to the new project
+      navigate(`/projects/${projectId}`);
+    } catch (error) {
+      console.error('Failed to create project:', error);
+      toast({
+        title: "Creation failed",
+        description: "There was an error creating your project",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCreating(false);
+    }
+  };
+  
+  // Reset form data when dialog is closed
+  const handleDialogClose = () => {
+    setFormData({
+      title: '',
+      description: '',
+      template: '',
+      color: 'blue',
+      startDate: new Date(),
+      dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+      members: 2,
+      tags: []
+    });
+    setStep(1);
+    onClose();
+  };
+  
   return (
-    <Dialog open={isOpen} onOpenChange={handleDialogClose}>
-      <DialogContent className="sm:max-w-[500px] bg-gray-900 text-white border-gray-800">
-        <DialogHeader>
-          <DialogTitle className="text-xl text-white">Add project</DialogTitle>
+    <Dialog open={open} onOpenChange={handleDialogClose}>
+      <DialogContent className="sm:max-w-[600px] p-0">
+        <DialogHeader className="p-6 pb-0">
+          <DialogTitle className="text-2xl font-bold">
+            {step === 1 ? 'Create new project' : step === 2 ? 'Project details' : 'Final setup'}
+          </DialogTitle>
+          <DialogDescription>
+            {step === 1 ? 'Get started by selecting a template and basic information' : 
+             step === 2 ? 'Set up your project schedule and team' : 
+             'Review and finalize your project settings'}
+          </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-4 py-4">
-            <div className="flex items-center gap-2">
-              <Checkbox 
-                id="use-template" 
-                className="border-gray-600 data-[state=checked]:bg-blue-500"
-              />
-              <Label htmlFor="use-template" className="text-white">Use template</Label>
+        <div className="relative">
+          <div className="flex justify-between px-6 pt-4 pb-2">
+            <div className="flex items-center space-x-2">
+              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-semibold ${step >= 1 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>1</div>
+              <span className={`text-sm ${step >= 1 ? 'text-primary font-medium' : 'text-muted-foreground'}`}>Template</span>
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="project-name" className="text-white">Title:</Label>
-              <div className="relative">
-                <div className="absolute left-3 top-3 w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center">
-                  <span className="text-white text-xs">↓</span>
-                </div>
-                <Input
-                  id="project-name"
-                  placeholder="Enter project title"
-                  value={newProject?.name || ''}
-                  onChange={handleNameChange}
-                  required
-                  className="pl-12 bg-gray-800 border-gray-700 text-white"
-                />
-              </div>
+            <div className="border-t border-border w-12 self-center"></div>
+            <div className="flex items-center space-x-2">
+              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-semibold ${step >= 2 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>2</div>
+              <span className={`text-sm ${step >= 2 ? 'text-primary font-medium' : 'text-muted-foreground'}`}>Details</span>
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="project-description" className="text-white">Description:</Label>
-              <Textarea
-                id="project-description"
-                placeholder="Enter project description"
-                value={newProject?.description || ''}
-                onChange={handleDescriptionChange}
-                rows={4}
-                className="bg-gray-800 border-gray-700 text-white"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label className="text-white">Assignees:</Label>
-              <div className="flex flex-wrap gap-2 items-center">
-                {newProject.assignees && newProject.assignees.map(assignee => (
-                  <div key={assignee.id} className="flex items-center bg-gray-800 rounded-full pr-2">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback className="bg-red-500 text-white">
-                        {assignee.name}
-                      </AvatarFallback>
-                    </Avatar>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveAssignee(assignee.id)}
-                      className="ml-1 text-gray-400 hover:text-white"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={handleAddAssignee}
-                  className="h-8 w-8 rounded-full bg-gray-800 flex items-center justify-center hover:bg-gray-700 border-gray-700 border"
-                >
-                  <Plus className="h-4 w-4 text-gray-400" />
-                </button>
-                {newProject.assignees && newProject.assignees.length > 0 && (
-                  <button
-                    type="button"
-                    className="text-sm text-blue-400 hover:text-blue-300 ml-2"
-                    onClick={() => setNewProject({ ...newProject, assignees: [] })}
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label className="text-white">Project manager:</Label>
-              <div className="flex items-center gap-2">
-                {newProject.manager ? (
-                  <div className="flex items-center bg-gray-800 rounded-full pr-2">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback className="bg-red-500 text-white">
-                        {newProject.manager.name}
-                      </AvatarFallback>
-                    </Avatar>
-                    <button
-                      type="button"
-                      onClick={() => setNewProject({ ...newProject, manager: null })}
-                      className="ml-1 text-gray-400 hover:text-white"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleSetManager}
-                    className="h-8 w-8 rounded-full bg-gray-800 flex items-center justify-center hover:bg-gray-700 border-gray-700 border"
-                  >
-                    <Plus className="h-4 w-4 text-gray-400" />
-                  </button>
-                )}
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-white">Start:</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button 
-                      variant="outline" 
-                      className={cn(
-                        "w-full justify-start text-left bg-gray-800 border-gray-700 hover:bg-gray-700",
-                        !newProject.startDate && "text-gray-400"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {newProject.startDate ? format(newProject.startDate, "PPP") : "Select"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 bg-gray-800 border-gray-700">
-                    <Calendar
-                      mode="single"
-                      selected={newProject.startDate}
-                      onSelect={handleStartDateSelect}
-                      initialFocus
-                      className="p-3 pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              
-              <div className="space-y-2">
-                <Label className="text-white">End:</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button 
-                      variant="outline" 
-                      className={cn(
-                        "w-full justify-start text-left bg-gray-800 border-gray-700 hover:bg-gray-700",
-                        !newProject.endDate && "text-gray-400"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {newProject.endDate ? format(newProject.endDate, "PPP") : "Select"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 bg-gray-800 border-gray-700">
-                    <Calendar
-                      mode="single"
-                      selected={newProject.endDate}
-                      onSelect={handleEndDateSelect}
-                      initialFocus
-                      className="p-3 pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-white">Category:</Label>
-                <Select value={newProject.category} onValueChange={handleCategoryChange}>
-                  <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-gray-800 border-gray-700 text-white">
-                    <SelectItem value="uncategorized">Uncategorized</SelectItem>
-                    <SelectItem value="marketing">Marketing</SelectItem>
-                    <SelectItem value="development">Development</SelectItem>
-                    <SelectItem value="design">Design</SelectItem>
-                    <SelectItem value="research">Research</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label className="text-white">Status:</Label>
-                <Select value={newProject.status} onValueChange={handleStatusChange}>
-                  <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-gray-800 border-gray-700 text-white">
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="planning">Planning</SelectItem>
-                    <SelectItem value="on-hold">On Hold</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="border-t border-border w-12 self-center"></div>
+            <div className="flex items-center space-x-2">
+              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-semibold ${step >= 3 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>3</div>
+              <span className={`text-sm ${step >= 3 ? 'text-primary font-medium' : 'text-muted-foreground'}`}>Finalize</span>
             </div>
           </div>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="space-y-4 px-6 py-4">
+          {step === 1 && (
+            <>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="title">Project title *</Label>
+                  <Input 
+                    id="title" 
+                    value={formData.title}
+                    onChange={(e) => updateFormData('title', e.target.value)}
+                    placeholder="Enter project title"
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea 
+                    id="description" 
+                    value={formData.description}
+                    onChange={(e) => updateFormData('description', e.target.value)}
+                    placeholder="Brief description of the project"
+                    rows={3}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Project color</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {colorOptions.map((color) => (
+                      <button
+                        key={color.id}
+                        type="button"
+                        className={`w-8 h-8 rounded-full ${color.color} flex items-center justify-center transition-all ${formData.color === color.value ? 'ring-2 ring-offset-2 ring-primary' : 'opacity-70 hover:opacity-100'}`}
+                        onClick={() => updateFormData('color', color.value)}
+                        title={color.label}
+                      >
+                        {formData.color === color.value && <CheckIcon className="h-4 w-4 text-white" />}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Template *</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {projectTemplates.map((template) => (
+                      <div
+                        key={template.id}
+                        className={`border rounded-lg p-3 cursor-pointer transition-all ${formData.template === template.id ? 'border-primary bg-primary/5' : 'hover:bg-accent'}`}
+                        onClick={() => updateFormData('template', template.id)}
+                      >
+                        <div className="flex items-start">
+                          <div className="text-2xl mr-2">{template.icon}</div>
+                          <div>
+                            <h4 className="font-medium">{template.name}</h4>
+                            <p className="text-xs text-muted-foreground">{template.description}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
           
-          <DialogFooter>
+          {step === 2 && (
+            <>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="startDate">Start date</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start text-left font-normal"
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {formData.startDate ? (
+                            format(formData.startDate, "PPP")
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={formData.startDate}
+                          onSelect={(date) => updateFormData('startDate', date)}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="dueDate">Due date</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start text-left font-normal"
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {formData.dueDate ? (
+                            format(formData.dueDate, "PPP")
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={formData.dueDate}
+                          onSelect={(date) => updateFormData('dueDate', date)}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="members">Team members</Label>
+                  <div className="flex items-center space-x-2">
+                    <Users className="h-5 w-5 text-muted-foreground" />
+                    <Select
+                      value={String(formData.members)}
+                      onValueChange={(value) => updateFormData('members', parseInt(value))}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select team size" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">Just me</SelectItem>
+                        <SelectItem value="2">2 members</SelectItem>
+                        <SelectItem value="3">3 members</SelectItem>
+                        <SelectItem value="4">4 members</SelectItem>
+                        <SelectItem value="5">5+ members</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="tags">Tags</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {['Development', 'Design', 'Marketing', 'Research', 'Planning'].map((tag) => {
+                      const isSelected = formData.tags.includes(tag);
+                      return (
+                        <button
+                          key={tag}
+                          type="button"
+                          className={`px-3 py-1 text-sm rounded-full transition-colors ${
+                            isSelected 
+                              ? 'bg-primary text-primary-foreground' 
+                              : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                          }`}
+                          onClick={() => {
+                            if (isSelected) {
+                              updateFormData('tags', formData.tags.filter(t => t !== tag));
+                            } else {
+                              updateFormData('tags', [...formData.tags, tag]);
+                            }
+                          }}
+                        >
+                          {tag}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+          
+          {step === 3 && (
+            <>
+              <div className="space-y-6">
+                <div className="bg-accent/50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-lg mb-3">Project Summary</h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Title:</span>
+                      <span className="font-medium">{formData.title}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Template:</span>
+                      <span className="font-medium">
+                        {projectTemplates.find(t => t.id === formData.template)?.name || 'Custom'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Duration:</span>
+                      <span className="font-medium">
+                        {format(formData.startDate, "MMM d")} - {format(formData.dueDate, "MMM d, yyyy")}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Team size:</span>
+                      <span className="font-medium">{formData.members} {formData.members === 1 ? 'member' : 'members'}</span>
+                    </div>
+                    {formData.tags.length > 0 && (
+                      <div className="flex flex-col">
+                        <span className="text-muted-foreground mb-1">Tags:</span>
+                        <div className="flex flex-wrap gap-1 justify-end">
+                          {formData.tags.map(tag => (
+                            <span key={tag} className="px-2 py-0.5 bg-secondary text-xs rounded">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="bg-accent/50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-lg mb-2">What happens next?</h3>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    After creating your project, you'll be redirected to the project dashboard where you can:
+                  </p>
+                  <ul className="text-sm space-y-1">
+                    <li className="flex items-center">
+                      <CheckIcon className="h-4 w-4 text-green-500 mr-2" />
+                      Add tasks and assign them to team members
+                    </li>
+                    <li className="flex items-center">
+                      <CheckIcon className="h-4 w-4 text-green-500 mr-2" />
+                      Schedule meetings and set milestones
+                    </li>
+                    <li className="flex items-center">
+                      <CheckIcon className="h-4 w-4 text-green-500 mr-2" />
+                      Create and edit project files
+                    </li>
+                    <li className="flex items-center">
+                      <CheckIcon className="h-4 w-4 text-green-500 mr-2" />
+                      Track progress and view project statistics
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </>
+          )}
+        </form>
+        
+        <DialogFooter className="p-6 pt-2">
+          {step > 1 && (
             <Button
               type="button"
-              variant="secondary"
-              onClick={handleDialogClose}
-              className="bg-transparent hover:bg-gray-700 text-white"
+              variant="outline"
+              onClick={handleBack}
+              className="mr-auto"
+              disabled={isCreating}
             >
-              Cancel
+              Back
             </Button>
-            <Button 
-              type="button"
-              onClick={handleNext}
-              className="bg-blue-500 hover:bg-blue-600 text-white"
-            >
-              Next <span className="ml-1">→</span>
+          )}
+          
+          {step < 3 ? (
+            <Button type="button" onClick={handleNext}>
+              Continue
             </Button>
-          </DialogFooter>
-        </form>
+          ) : (
+            <Button type="submit" onClick={handleSubmit} disabled={isCreating}>
+              {isCreating ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Creating...
+                </>
+              ) : (
+                'Create Project'
+              )}
+            </Button>
+          )}
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

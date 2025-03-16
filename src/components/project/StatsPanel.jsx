@@ -65,81 +65,69 @@ const generateResourceData = (resources) => {
 
 const TaskStatusChart = ({ statusCounts, totalTasks }) => {
   const data = [
-    { name: 'Todo', value: statusCounts.todo, fill: '#3b82f6' },
-    { name: 'In Progress', value: statusCounts.inProgress, fill: '#f59e0b' },
-    { name: 'Completed', value: statusCounts.completed, fill: '#10b981' },
+    { name: 'Todo', value: statusCounts.todo || 0, fill: '#3b82f6' },
+    { name: 'In Progress', value: statusCounts.inProgress || 0, fill: '#f59e0b' },
+    { name: 'Completed', value: statusCounts.completed || 0, fill: '#10b981' },
   ];
 
   return (
     <div className="h-64">
-      {totalTasks > 0 ? (
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={data}
-            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-            barSize={40}
-          >
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis />
-            <Tooltip />
-            <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-              {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.fill} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      ) : (
-        <div className="h-full flex items-center justify-center">
-          <p className="text-muted-foreground">No task data available</p>
-        </div>
-      )}
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart
+          data={data}
+          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+          barSize={40}
+        >
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="name" />
+          <YAxis />
+          <Tooltip />
+          <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+            {data.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={entry.fill} />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
     </div>
   );
 };
 
 const TaskPriorityChart = ({ priorityCounts, totalTasks }) => {
   const data = [
-    { name: 'Low', value: priorityCounts.low, fill: '#3b82f6' },
-    { name: 'Medium', value: priorityCounts.medium, fill: '#f59e0b' },
-    { name: 'High', value: priorityCounts.high, fill: '#ef4444' },
+    { name: 'Low', value: priorityCounts.low || 0, fill: '#3b82f6' },
+    { name: 'Medium', value: priorityCounts.medium || 0, fill: '#f59e0b' },
+    { name: 'High', value: priorityCounts.high || 0, fill: '#ef4444' },
   ];
 
   return (
     <div className="h-64">
-      {totalTasks > 0 ? (
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={data}
-              cx="50%"
-              cy="50%"
-              innerRadius={60}
-              outerRadius={80}
-              paddingAngle={5}
-              dataKey="value"
-              label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-            >
-              {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.fill} />
-              ))}
-            </Pie>
-            <Tooltip />
-            <Legend />
-          </PieChart>
-        </ResponsiveContainer>
-      ) : (
-        <div className="h-full flex items-center justify-center">
-          <p className="text-muted-foreground">No priority data available</p>
-        </div>
-      )}
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <Pie
+            data={data}
+            cx="50%"
+            cy="50%"
+            innerRadius={60}
+            outerRadius={80}
+            paddingAngle={5}
+            dataKey="value"
+            label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+          >
+            {data.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={entry.fill} />
+            ))}
+          </Pie>
+          <Tooltip />
+          <Legend />
+        </PieChart>
+      </ResponsiveContainer>
     </div>
   );
 };
 
 const BurndownChart = ({ project }) => {
-  const totalTasks = project.tasksCount.total;
+  const totalTasks = project?.tasksCount?.total || 10;
   const daysLeft = 30; // Sample days left in the project
   
   // Generate burndown data
@@ -147,37 +135,31 @@ const BurndownChart = ({ project }) => {
   
   return (
     <div className="h-64">
-      {totalTasks > 0 ? (
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart
-            data={data}
-            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Line
-              type="monotone"
-              dataKey="Ideal"
-              stroke="#8884d8"
-              strokeDasharray="5 5"
-              activeDot={{ r: 8 }}
-            />
-            <Line
-              type="monotone"
-              dataKey="Actual"
-              stroke="#82ca9d"
-              activeDot={{ r: 8 }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      ) : (
-        <div className="h-full flex items-center justify-center">
-          <p className="text-muted-foreground">No burndown data available</p>
-        </div>
-      )}
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart
+          data={data}
+          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+        >
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="date" />
+          <YAxis />
+          <Tooltip />
+          <Legend />
+          <Line
+            type="monotone"
+            dataKey="Ideal"
+            stroke="#8884d8"
+            strokeDasharray="5 5"
+            activeDot={{ r: 8 }}
+          />
+          <Line
+            type="monotone"
+            dataKey="Actual"
+            stroke="#82ca9d"
+            activeDot={{ r: 8 }}
+          />
+        </LineChart>
+      </ResponsiveContainer>
     </div>
   );
 };
@@ -216,8 +198,8 @@ const ResourceAllocationChart = () => {
 };
 
 const ProjectProgressBar = ({ project }) => {
-  const progressPercentage = project.tasksCount.total > 0 
-    ? Math.round((project.tasksCount.completed / project.tasksCount.total) * 100) 
+  const progressPercentage = project?.tasksCount?.total > 0 
+    ? Math.round((project?.tasksCount?.completed / project?.tasksCount?.total) * 100) 
     : 0;
     
   return (
@@ -237,7 +219,7 @@ const ProjectProgressBar = ({ project }) => {
 };
 
 const OverdueTasksTable = ({ projectTasks }) => {
-  const overdueTasks = projectTasks.filter(task => 
+  const overdueTasks = (projectTasks || []).filter(task => 
     new Date(task.dueDate) < new Date() && task.status !== 'completed'
   ).slice(0, 5); // Show only first 5 overdue tasks
   
@@ -297,18 +279,27 @@ const OverdueTasksTable = ({ projectTasks }) => {
 };
 
 const StatsPanel = ({ project, projectTasks }) => {
+  // Ensure project and projectTasks are defined with fallbacks
+  const safeProject = project || { 
+    tasksCount: { total: 0, completed: 0 }, 
+    dueDate: new Date(), 
+    members: [] 
+  };
+  
+  const safeProjectTasks = projectTasks || [];
+  
   // Calculate task status counts for charts
   const statusCounts = {
-    todo: projectTasks.filter(task => task.status === 'todo').length,
-    inProgress: projectTasks.filter(task => task.status === 'in-progress').length,
-    completed: projectTasks.filter(task => task.status === 'completed').length
+    todo: safeProjectTasks.filter(task => task.status === 'todo').length,
+    inProgress: safeProjectTasks.filter(task => task.status === 'in-progress').length,
+    completed: safeProjectTasks.filter(task => task.status === 'completed').length
   };
 
   // Calculate priority counts for charts
   const priorityCounts = {
-    low: projectTasks.filter(task => task.priority === 'low').length,
-    medium: projectTasks.filter(task => task.priority === 'medium').length,
-    high: projectTasks.filter(task => task.priority === 'high').length
+    low: safeProjectTasks.filter(task => task.priority === 'low').length,
+    medium: safeProjectTasks.filter(task => task.priority === 'medium').length,
+    high: safeProjectTasks.filter(task => task.priority === 'high').length
   };
 
   return (
@@ -336,7 +327,7 @@ const StatsPanel = ({ project, projectTasks }) => {
             <div>
               <h3 className="text-sm font-medium mb-1">End date:</h3>
               <p className="text-muted-foreground">
-                {format(new Date(project.dueDate), 'MMM dd')}
+                {format(new Date(safeProject.dueDate || new Date()), 'MMM dd')}
               </p>
             </div>
             <div>
@@ -349,17 +340,17 @@ const StatsPanel = ({ project, projectTasks }) => {
             </div>
           </div>
           
-          <div className="grid grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <div className="bg-blue-50 p-4 rounded-lg">
               <div className="text-blue-600 mb-1">Project status:</div>
               <div className="text-2xl font-bold">
-                {Math.round((project.tasksCount.completed / Math.max(project.tasksCount.total, 1)) * 100)}% Completed
+                {Math.round((safeProject.tasksCount.completed / Math.max(safeProject.tasksCount.total, 1)) * 100)}% Completed
               </div>
             </div>
             <div className="bg-blue-50 p-4 rounded-lg">
               <div className="text-blue-600 mb-1">Tasks:</div>
               <div className="text-2xl font-bold">
-                {project.tasksCount.completed} / {project.tasksCount.total} Total
+                {safeProject.tasksCount.completed} / {safeProject.tasksCount.total} Total
               </div>
             </div>
             <div className="bg-blue-50 p-4 rounded-lg">
@@ -368,7 +359,9 @@ const StatsPanel = ({ project, projectTasks }) => {
             </div>
             <div className="bg-blue-50 p-4 rounded-lg">
               <div className="text-blue-600 mb-1">People assigned:</div>
-              <div className="text-2xl font-bold">{project.members} Assigned</div>
+              <div className="text-2xl font-bold">
+                {Array.isArray(safeProject.members) ? safeProject.members.length : 0} Assigned
+              </div>
             </div>
           </div>
           
@@ -380,15 +373,15 @@ const StatsPanel = ({ project, projectTasks }) => {
                   <div className="h-0.5 w-full bg-gray-300 relative">
                     {/* Today marker */}
                     <div className="absolute top-0 left-1/3 -translate-x-1/2 h-8 w-0.5 bg-blue-600"></div>
-                    <div className="absolute -top-7 left-1/3 -translate-x-1/2 text-xs text-blue-600 whitespace-nowrap">Today Feb 26</div>
+                    <div className="absolute -top-7 left-1/3 -translate-x-1/2 text-xs text-blue-600 whitespace-nowrap">Today {format(new Date(), 'MMM dd')}</div>
                     
                     {/* Start marker */}
                     <div className="absolute top-0 left-0 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-green-500 bg-white"></div>
-                    <div className="absolute top-6 left-0 -translate-x-1/2 text-xs text-green-600 whitespace-nowrap">Starts Feb 15</div>
+                    <div className="absolute top-6 left-0 -translate-x-1/2 text-xs text-green-600 whitespace-nowrap">Starts {format(new Date(Date.now() - 14 * 24 * 60 * 60 * 1000), 'MMM dd')}</div>
                     
                     {/* End marker */}
                     <div className="absolute top-0 right-0 h-4 w-4 translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-red-500 bg-white"></div>
-                    <div className="absolute top-6 right-0 translate-x-1/2 text-xs text-red-600 whitespace-nowrap">Ends Feb 28</div>
+                    <div className="absolute top-6 right-0 translate-x-1/2 text-xs text-red-600 whitespace-nowrap">Ends {format(new Date(safeProject.dueDate || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)), 'MMM dd')}</div>
                   </div>
                 </div>
                 
@@ -422,7 +415,7 @@ const StatsPanel = ({ project, projectTasks }) => {
           <CardContent>
             <TaskStatusChart 
               statusCounts={statusCounts} 
-              totalTasks={projectTasks.length} 
+              totalTasks={safeProjectTasks.length} 
             />
           </CardContent>
         </Card>
@@ -434,7 +427,7 @@ const StatsPanel = ({ project, projectTasks }) => {
           <CardContent>
             <TaskPriorityChart 
               priorityCounts={priorityCounts} 
-              totalTasks={projectTasks.length} 
+              totalTasks={safeProjectTasks.length} 
             />
           </CardContent>
         </Card>
@@ -446,7 +439,7 @@ const StatsPanel = ({ project, projectTasks }) => {
             <CardTitle>Burn-up Chart - Tasks</CardTitle>
           </CardHeader>
           <CardContent>
-            <BurndownChart project={project} />
+            <BurndownChart project={safeProject} />
           </CardContent>
         </Card>
         
@@ -465,7 +458,7 @@ const StatsPanel = ({ project, projectTasks }) => {
           <CardTitle>Overdue Tasks</CardTitle>
         </CardHeader>
         <CardContent>
-          <OverdueTasksTable projectTasks={projectTasks} />
+          <OverdueTasksTable projectTasks={safeProjectTasks} />
         </CardContent>
       </Card>
       

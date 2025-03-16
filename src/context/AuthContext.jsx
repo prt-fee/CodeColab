@@ -5,14 +5,6 @@ import { useNavigate } from 'react-router-dom';
 // Create the context
 const AuthContext = createContext(null);
 
-// Initial mock user data
-const MOCK_USER = {
-  id: '1',
-  name: 'John Doe',
-  email: 'john@example.com',
-  avatar: 'https://randomuser.me/api/portraits/men/32.jpg'
-};
-
 // Provider component
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -39,8 +31,16 @@ export const AuthProvider = ({ children }) => {
     try {
       // In a real app, you would validate credentials with your API
       if (email && password) {
-        setUser(MOCK_USER);
-        localStorage.setItem('projectify_user', JSON.stringify(MOCK_USER));
+        // Instead of using MOCK_USER, create a user with the provided email
+        const loginUser = {
+          id: '1',
+          name: email.split('@')[0], // Use the part before @ as a simple name
+          email: email,
+          avatar: 'https://randomuser.me/api/portraits/men/32.jpg'
+        };
+        
+        setUser(loginUser);
+        localStorage.setItem('projectify_user', JSON.stringify(loginUser));
         setIsLoading(false);
         return true;
       } else {
@@ -60,7 +60,12 @@ export const AuthProvider = ({ children }) => {
     try {
       // In a real app, you would register the user with your API
       if (name && email && password) {
-        const newUser = { ...MOCK_USER, name, email };
+        const newUser = {
+          id: '1',
+          name: name,
+          email: email,
+          avatar: 'https://randomuser.me/api/portraits/men/32.jpg'
+        };
         setUser(newUser);
         localStorage.setItem('projectify_user', JSON.stringify(newUser));
         setIsLoading(false);
@@ -82,6 +87,17 @@ export const AuthProvider = ({ children }) => {
     navigate('/'); // Changed from /login to / (index page)
   };
 
+  // Update user function
+  const updateUser = (updatedUserData) => {
+    if (user) {
+      const updatedUser = {...user, ...updatedUserData};
+      setUser(updatedUser);
+      localStorage.setItem('projectify_user', JSON.stringify(updatedUser));
+      return true;
+    }
+    return false;
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, 
@@ -89,7 +105,8 @@ export const AuthProvider = ({ children }) => {
       loading: isLoading, 
       login, 
       register, 
-      logout 
+      logout,
+      updateUser
     }}>
       {children}
     </AuthContext.Provider>

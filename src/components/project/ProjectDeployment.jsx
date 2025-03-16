@@ -4,8 +4,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Upload, Terminal, ExternalLink, CheckCircle, AlertCircle } from 'lucide-react';
-import useProjectUploader from '@/hooks/useProjectUploader';
+import { Upload, Terminal, ExternalLink, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 const BuildLog = ({ log }) => {
   const getLogStyle = (message) => {
@@ -31,16 +31,100 @@ const BuildLog = ({ log }) => {
 
 const ProjectDeployment = () => {
   const [files, setFiles] = useState([]);
-  const { uploading, buildStatus, deploymentUrl, buildLogs, uploadAndDeploy } = useProjectUploader();
+  const [uploading, setUploading] = useState(false);
+  const [buildStatus, setBuildStatus] = useState('');
+  const [deploymentUrl, setDeploymentUrl] = useState('');
+  const [buildLogs, setBuildLogs] = useState([]);
 
   const handleFileChange = (e) => {
     setFiles(Array.from(e.target.files));
   };
 
+  const addLog = (message) => {
+    setBuildLogs(prev => [...prev, { message, timestamp: new Date() }]);
+  };
+
+  const simulateDeployment = async () => {
+    setUploading(true);
+    setBuildStatus('building');
+    setBuildLogs([]);
+    
+    // Simulate upload and build process with logs
+    addLog('Starting deployment process...');
+    
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    addLog('Uploading files to server...');
+    
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    addLog('Upload complete ✅');
+    
+    await new Promise(resolve => setTimeout(resolve, 800));
+    addLog('Installing dependencies...');
+    
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    addLog('npm install completed successfully ✅');
+    
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    addLog('Building project...');
+    
+    await new Promise(resolve => setTimeout(resolve, 2500));
+    
+    // Randomly succeed or show error (80% success rate)
+    if (Math.random() > 0.2) {
+      addLog('Build completed successfully ✅');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      addLog('Running tests...');
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      addLog('All tests passed ✅');
+      await new Promise(resolve => setTimeout(resolve, 800));
+      addLog('Deploying to production server...');
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      addLog('Deployment successful! ✅');
+      
+      // Set success state
+      setBuildStatus('success');
+      setDeploymentUrl('https://your-project-12345.projectify-app.com');
+      
+      toast({
+        title: 'Deployment Successful',
+        description: 'Your project has been deployed successfully',
+      });
+    } else {
+      addLog('Error during build process ❌');
+      addLog('Error: Module not found: Error: Can\'t resolve \'./missing-module\'');
+      
+      // Set error state
+      setBuildStatus('error');
+      
+      toast({
+        title: 'Deployment Failed',
+        description: 'There was an error during the build process',
+        variant: 'destructive'
+      });
+    }
+    
+    setUploading(false);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (files.length === 0) return;
-    await uploadAndDeploy(files);
+    if (files.length === 0) {
+      toast({
+        title: 'No Files Selected',
+        description: 'Please select at least one file to deploy',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    await simulateDeployment();
+  };
+
+  const handleReset = () => {
+    setFiles([]);
+    setBuildLogs([]);
+    setBuildStatus('');
+    setDeploymentUrl('');
   };
 
   return (
@@ -56,7 +140,10 @@ const ProjectDeployment = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="files">Project Files</Label>
-              <div className="border-2 border-dashed rounded-md p-6 text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors">
+              <div 
+                className="border-2 border-dashed rounded-md p-6 text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
+                onClick={() => document.getElementById('files').click()}
+              >
                 <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                 <p className="text-sm mb-2">Drag and drop your project files here</p>
                 <p className="text-xs text-muted-foreground mb-4">
@@ -69,7 +156,7 @@ const ProjectDeployment = () => {
                   onChange={handleFileChange}
                   multiple
                 />
-                <Button type="button" variant="outline" onClick={() => document.getElementById('files').click()}>
+                <Button type="button" variant="outline">
                   Select Files
                 </Button>
               </div>
@@ -85,22 +172,26 @@ const ProjectDeployment = () => {
                 </div>
               )}
             </div>
-            <Button type="submit" className="w-full" disabled={files.length === 0 || uploading}>
-              {uploading ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Deploying...
-                </>
-              ) : (
-                <>
-                  <Upload className="mr-2 h-4 w-4" />
-                  Deploy Project
-                </>
+            <div className="flex gap-2">
+              <Button type="submit" className="flex-1" disabled={files.length === 0 || uploading}>
+                {uploading ? (
+                  <>
+                    <RefreshCw className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" />
+                    Deploying...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Deploy Project
+                  </>
+                )}
+              </Button>
+              {(buildStatus || files.length > 0) && (
+                <Button type="button" variant="outline" onClick={handleReset} disabled={uploading}>
+                  Reset
+                </Button>
               )}
-            </Button>
+            </div>
           </form>
         </CardContent>
       </Card>
@@ -145,15 +236,13 @@ const ProjectDeployment = () => {
             <div className="bg-muted p-3 rounded-md flex items-center justify-between">
               <div className="text-sm truncate">
                 <span className="text-muted-foreground mr-2">Deployed at:</span>
-                <a href={deploymentUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                <a href="#" className="text-blue-500 hover:underline">
                   {deploymentUrl}
                 </a>
               </div>
-              <Button size="sm" variant="outline" asChild>
-                <a href={deploymentUrl} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="h-4 w-4 mr-1" />
-                  Visit
-                </a>
+              <Button size="sm" variant="outline">
+                <ExternalLink className="h-4 w-4 mr-1" />
+                Visit
               </Button>
             </div>
           )}
