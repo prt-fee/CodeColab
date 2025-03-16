@@ -1,18 +1,18 @@
 
 import React, { useState } from 'react';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
-const PasswordChangeForm = () => {
+const PasswordForm = () => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
-  
-  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const handlePasswordChange = (e) => {
     e.preventDefault();
@@ -54,7 +54,7 @@ const PasswordChangeForm = () => {
       setIsSubmitting(false);
     }, 1000);
   };
-
+  
   return (
     <form onSubmit={handlePasswordChange}>
       <div className="space-y-4">
@@ -115,4 +115,4 @@ const PasswordChangeForm = () => {
   );
 };
 
-export default PasswordChangeForm;
+export default PasswordForm;
