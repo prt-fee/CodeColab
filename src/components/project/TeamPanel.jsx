@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Users, UserPlus, Mail, X } from 'lucide-react';
@@ -18,7 +18,12 @@ const TeamPanel = ({ members, projectTitle }) => {
   const [showAddMember, setShowAddMember] = useState(false);
   const [newMember, setNewMember] = useState({ name: '', email: '', avatar: '' });
   const [teamMembers, setTeamMembers] = useState(members || []);
-  const { notifyTeamAdd } = useNotifications();
+  const { notifyTeamMemberAdded } = useNotifications();
+
+  // Update team members when the members prop changes
+  useEffect(() => {
+    setTeamMembers(members || []);
+  }, [members]);
 
   const handleAddMember = () => {
     if (!newMember.name.trim() || !newMember.email.trim()) {
@@ -42,8 +47,8 @@ const TeamPanel = ({ members, projectTitle }) => {
     
     setTeamMembers([...teamMembers, memberToAdd]);
     
-    // Send notification to the added team member
-    notifyTeamAdd(newMember.email, projectTitle || 'this project');
+    // Notify about the new team member
+    notifyTeamMemberAdded(newMember.name, newMember.email, projectTitle || 'Project');
     
     setNewMember({ name: '', email: '', avatar: '' });
     setShowAddMember(false);
@@ -63,7 +68,10 @@ const TeamPanel = ({ members, projectTitle }) => {
   };
 
   const handleSendInvitation = (email) => {
-    notifyTeamAdd(email, projectTitle || 'this project');
+    toast({
+      title: "Invitation sent",
+      description: `Invitation has been sent to ${email}`
+    });
   };
 
   return (

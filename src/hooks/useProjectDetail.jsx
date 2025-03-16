@@ -1,82 +1,74 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useProject } from './useProject';
-import { useProjectFiles } from './useProjectFiles';
-import { useProjectMeetings } from './useProjectMeetings';
-import { useProjectTasks } from './useProjectTasks';
-import { useProjectCommits } from './useProjectCommits';
+import useProjectFiles from './projectDetail/useProjectFiles';
+import useProjectTasks from './projectDetail/useProjectTasks';
+import useProjectMeetings from './projectDetail/useProjectMeetings';
+import useProjectCommits from './projectDetail/useProjectCommits';
 import { toast } from '@/hooks/use-toast';
 
 const useProjectDetail = (projectId) => {
+  const [project, setProject] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
-  
-  // Use custom hooks for different project aspects
-  const { project, isLoading, error } = useProject(projectId);
-  const { 
-    selectedFile, setSelectedFile,
-    newFileName, setNewFileName,
-    newFileType, setNewFileType,
-    newFileDialogOpen, setNewFileDialogOpen,
-    handleSaveFile,
-    handleAddFile
-  } = useProjectFiles(project);
-  
-  const {
-    newMeetingDialogOpen, setNewMeetingDialogOpen,
-    newMeeting, setNewMeeting,
-    handleAddMeeting
-  } = useProjectMeetings(project);
-  
-  const {
-    projectTasks,
-    newTaskDialogOpen, setNewTaskDialogOpen, 
-    newTask, setNewTask,
-    handleAddTask
-  } = useProjectTasks(project);
-  
-  const {
-    newCommitDialogOpen, setNewCommitDialogOpen,
-    commitMessage, setCommitMessage,
-    handleAddCommit
-  } = useProjectCommits(project, selectedFile);
-  
-  // Navigate back to projects list
+
+  // Load project data
+  useEffect(() => {
+    const fetchProject = () => {
+      setIsLoading(true);
+      
+      try {
+        // Get stored projects
+        const storedProjects = JSON.parse(localStorage.getItem('user_projects') || '[]');
+        
+        // Find the project with the given ID
+        const foundProject = storedProjects.find(p => p.id === projectId);
+        
+        if (foundProject) {
+          setProject(foundProject);
+        } else {
+          toast({
+            title: "Project not found",
+            description: "The requested project could not be found",
+            variant: "destructive"
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching project:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load project details",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    if (projectId) {
+      fetchProject();
+    }
+  }, [projectId]);
+
+  // Use custom hooks for different project features
+  const filesHook = useProjectFiles(projectId, project?.files);
+  const tasksHook = useProjectTasks(projectId);
+  const meetingsHook = useProjectMeetings(projectId);
+  const commitsHook = useProjectCommits(projectId);
+
   const handleGoBack = () => {
     navigate('/projects');
   };
-  
+
   return {
     project,
     isLoading,
-    error,
-    selectedFile, 
-    setSelectedFile,
-    projectTasks,
-    newFileName, 
-    setNewFileName,
-    newFileType, 
-    setNewFileType,
-    newFileDialogOpen, 
-    setNewFileDialogOpen,
-    newMeetingDialogOpen, 
-    setNewMeetingDialogOpen,
-    newTaskDialogOpen, 
-    setNewTaskDialogOpen,
-    newCommitDialogOpen, 
-    setNewCommitDialogOpen,
-    commitMessage, 
-    setCommitMessage,
-    newMeeting, 
-    setNewMeeting,
-    newTask, 
-    setNewTask,
-    handleSaveFile,
-    handleAddFile,
-    handleAddCommit,
-    handleAddMeeting,
-    handleAddTask,
-    handleGoBack
+    handleGoBack,
+    projectTasks: tasksHook.projectTasks,
+    ...filesHook,
+    ...tasksHook,
+    ...meetingsHook,
+    ...commitsHook
   };
 };
 

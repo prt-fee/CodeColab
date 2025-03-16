@@ -1,20 +1,18 @@
 
 import React, { useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, User, Mail } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Loader2, Mail, User } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
-const ProfileForm = ({ user }) => {
-  const { updateUser } = useAuth();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
+const ProfileForm = ({ user, updateUser }) => {
   const [profileData, setProfileData] = useState({
     name: user?.name || '',
     email: user?.email || '',
     avatar: user?.avatar || ''
   });
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const handleProfileUpdate = (e) => {
     e.preventDefault();
@@ -36,7 +34,7 @@ const ProfileForm = ({ user }) => {
     
     setIsSubmitting(false);
   };
-  
+
   return (
     <form onSubmit={handleProfileUpdate}>
       <div className="space-y-4">
