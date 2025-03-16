@@ -13,6 +13,9 @@ import NotFound from './pages/NotFound';
 import ProjectUpload from './pages/ProjectUpload';
 import MeetingScheduler from './pages/MeetingScheduler';
 import Chat from './pages/Chat';
+import About from './pages/About';
+import Contact from './pages/Contact';
+import Features from './pages/Features';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationsProvider } from './context/NotificationsContext';
 import { Toaster } from './components/ui/toaster';
@@ -34,6 +37,9 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/features" element={<Features />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Toaster />

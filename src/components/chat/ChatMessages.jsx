@@ -11,57 +11,16 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Smile, ThumbsUp, Reply, MoreVertical } from 'lucide-react';
-
-const ReactionButton = ({ icon: Icon, tooltip, onClick, className }) => (
-  <TooltipProvider>
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button 
-          onClick={onClick} 
-          className={`p-1.5 rounded-full text-muted-foreground hover:bg-muted hover:text-foreground transition-colors ${className}`}
-        >
-          <Icon className="h-4 w-4" />
-        </button>
-      </TooltipTrigger>
-      <TooltipContent>
-        <p>{tooltip}</p>
-      </TooltipContent>
-    </Tooltip>
-  </TooltipProvider>
-);
-
-const MessageActions = ({ isVisible, onReply, onReact }) => {
-  if (!isVisible) return null;
-  
-  return (
-    <div className="absolute -top-3 right-2 bg-background border rounded-full shadow-sm p-1 flex gap-1">
-      <ReactionButton 
-        icon={ThumbsUp} 
-        tooltip="Like" 
-        onClick={onReact}
-      />
-      <ReactionButton 
-        icon={Smile} 
-        tooltip="Add reaction" 
-        onClick={onReact}
-      />
-      <ReactionButton 
-        icon={Reply} 
-        tooltip="Reply" 
-        onClick={onReply}
-      />
-      <ReactionButton 
-        icon={MoreVertical} 
-        tooltip="More options" 
-        onClick={() => {}}
-      />
-    </div>
-  );
-};
+import MessageActionsPanel from './MessageActionsPanel';
+import MessageAttachments from './MessageAttachments';
+import MessageReply from './MessageReply';
+import MessageReactions from './MessageReactions';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const ChatMessages = ({ messages, currentUser, getUserName }) => {
   const messagesEndRef = useRef(null);
   const [hoveredMessage, setHoveredMessage] = React.useState(null);
+  const [replyingTo, setReplyingTo] = React.useState(null);
 
   useEffect(() => {
     // Scroll to bottom of messages
@@ -72,27 +31,19 @@ const ChatMessages = ({ messages, currentUser, getUserName }) => {
 
   const handleReply = (messageId) => {
     console.log('Reply to message:', messageId);
-    // Implement reply functionality
+    const message = messages.find(m => m.id === messageId);
+    if (message) {
+      setReplyingTo(message);
+    }
+  };
+
+  const handleCancelReply = () => {
+    setReplyingTo(null);
   };
 
   const handleReact = (messageId) => {
     console.log('React to message:', messageId);
     // Implement reaction functionality
-  };
-
-  const renderMessageReactions = (reactions) => {
-    if (!reactions || reactions.length === 0) return null;
-    
-    return (
-      <div className="flex gap-1 mt-1">
-        {reactions.map((reaction, index) => (
-          <div key={index} className="flex items-center bg-muted px-1.5 py-0.5 rounded-full text-xs">
-            <span>{reaction.emoji}</span>
-            <span className="ml-1">{reaction.count}</span>
-          </div>
-        ))}
-      </div>
-    );
   };
 
   return (
@@ -134,7 +85,7 @@ const ChatMessages = ({ messages, currentUser, getUserName }) => {
                   )}
                   
                   <div className="relative">
-                    <MessageActions 
+                    <MessageActionsPanel 
                       isVisible={isHovered}
                       onReply={() => handleReply(message.id)}
                       onReact={() => handleReact(message.id)}
@@ -149,25 +100,19 @@ const ChatMessages = ({ messages, currentUser, getUserName }) => {
                       
                       {/* Render attachments if they exist */}
                       {message.attachments && message.attachments.length > 0 && (
-                        <div className="mt-2 space-y-2">
-                          {message.attachments.map((attachment, index) => (
-                            <div key={index} className="border rounded p-2 bg-background/50 flex items-center gap-2">
-                              <div className="text-xs text-muted-foreground">{attachment.name}</div>
-                            </div>
-                          ))}
-                        </div>
+                        <MessageAttachments attachments={message.attachments} />
                       )}
                       
                       {/* Render reply reference if it exists */}
                       {message.replyTo && (
-                        <div className="mt-2 border-l-2 border-primary/50 pl-2 text-xs text-muted-foreground">
-                          <p>Replying to {getUserName(message.replyTo.sender)}</p>
-                          <p className="truncate">{message.replyTo.text}</p>
-                        </div>
+                        <MessageReply 
+                          replyTo={message.replyTo} 
+                          getUserName={getUserName} 
+                        />
                       )}
                     </div>
                     
-                    {renderMessageReactions(reactions)}
+                    <MessageReactions reactions={reactions} />
                     
                     <p className="text-xs text-muted-foreground mt-1 text-right">
                       {formatDistanceToNow(new Date(message.timestamp), { addSuffix: true })}
@@ -180,6 +125,27 @@ const ChatMessages = ({ messages, currentUser, getUserName }) => {
         })
       )}
       <div ref={messagesEndRef} />
+      
+      {replyingTo && (
+        <div className="fixed bottom-16 left-0 right-0 bg-background border-t p-2 flex items-center justify-between">
+          <div className="flex items-center">
+            <div className="w-1 h-10 bg-blue-500 mr-2"></div>
+            <div>
+              <p className="text-xs text-muted-foreground">
+                Replying to {getUserName(replyingTo.sender)}
+              </p>
+              <p className="text-sm truncate">{replyingTo.text}</p>
+            </div>
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleCancelReply}
+          >
+            <MoreVertical className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

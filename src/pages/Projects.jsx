@@ -6,9 +6,7 @@ import NavBar from '@/components/NavBar';
 import ProjectsList from '@/components/dashboard/ProjectsList';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import NewProjectDialog from '@/components/dashboard/NewProjectDialog';
 import useProjects from '@/hooks/useProjects';
 import { toast } from '@/hooks/use-toast';
 
@@ -24,7 +22,13 @@ const Projects = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newProject, setNewProject] = useState({
     name: '',
-    description: ''
+    description: '',
+    assignees: [],
+    manager: null,
+    startDate: null,
+    endDate: null,
+    category: 'uncategorized',
+    status: 'active'
   });
 
   // Filter projects based on search term
@@ -50,8 +54,8 @@ const Projects = () => {
       title: newProject.name,
       description: newProject.description,
       color: 'blue',
-      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-      members: 1,
+      dueDate: newProject.endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      members: newProject.assignees?.length || 1,
       tasksCount: {
         total: 0,
         completed: 0
@@ -84,7 +88,16 @@ const Projects = () => {
       description: "Project created successfully",
     });
     
-    setNewProject({ name: '', description: '' });
+    setNewProject({
+      name: '',
+      description: '',
+      assignees: [],
+      manager: null,
+      startDate: null,
+      endDate: null,
+      category: 'uncategorized',
+      status: 'active'
+    });
     setIsDialogOpen(false);
     
     // Refresh page to show new project
@@ -147,44 +160,13 @@ const Projects = () => {
         />
       </div>
       
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create New Project</DialogTitle>
-            <DialogDescription>
-              Add the details for your new project.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <form onSubmit={handleCreateProject} className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Project Name</Label>
-              <Input
-                id="name"
-                value={newProject.name}
-                onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
-                placeholder="Enter project name"
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={newProject.description}
-                onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
-                placeholder="Describe your project"
-                rows={4}
-              />
-            </div>
-            
-            <DialogFooter>
-              <Button type="submit">Create Project</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <NewProjectDialog 
+        isOpen={isDialogOpen} 
+        onOpenChange={setIsDialogOpen}
+        newProject={newProject}
+        setNewProject={setNewProject}
+        onCreateProject={handleCreateProject}
+      />
     </div>
   );
 };

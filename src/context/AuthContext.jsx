@@ -75,11 +75,11 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Logout function
+  // Logout function - updated to redirect to index page
   const logout = () => {
     setUser(null);
     localStorage.removeItem('projectify_user');
-    navigate('/login');
+    navigate('/'); // Changed from /login to / (index page)
   };
 
   return (

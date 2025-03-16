@@ -1,14 +1,26 @@
 
 import React, { useState } from 'react';
 import NavBar from '@/components/NavBar';
-import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
-import { Mail, MapPin, Phone } from 'lucide-react';
+
+const ContactCard = ({ icon, title, description, value }) => {
+  return (
+    <div className="border rounded-lg p-8 text-center transition-all hover:shadow-md">
+      <div className="flex justify-center mb-4">
+        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
+          {icon}
+        </div>
+      </div>
+      <h3 className="text-xl font-bold mb-2">{title}</h3>
+      <p className="text-muted-foreground mb-2">{description}</p>
+      <p className="font-medium text-primary">{value}</p>
+    </div>
+  );
+};
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -18,8 +30,6 @@ const Contact = () => {
     message: ''
   });
   
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -27,145 +37,135 @@ const Contact = () => {
   
   const handleSubmit = (e) => {
     e.preventDefault();
-    setIsSubmitting(true);
     
-    // Simulate API call
-    setTimeout(() => {
+    // Validate form
+    if (!formData.name || !formData.email || !formData.message) {
       toast({
-        title: "Message Sent",
-        description: "We've received your message and will get back to you soon!",
+        title: "Missing Information",
+        description: "Please fill out all required fields.",
+        variant: "destructive"
       });
-      setFormData({
-        name: '',
-        email: '',
-        subject: '',
-        message: ''
-      });
-      setIsSubmitting(false);
-    }, 1500);
+      return;
+    }
+    
+    // Send form data (mock)
+    toast({
+      title: "Message Sent",
+      description: "Thank you for your message. We'll get back to you soon!"
+    });
+    
+    // Reset form
+    setFormData({
+      name: '',
+      email: '',
+      subject: '',
+      message: ''
+    });
   };
   
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background">
       <NavBar />
-      
-      <main className="flex-grow pt-20">
-        <section className="py-16 px-4">
-          <div className="container mx-auto">
-            <div className="max-w-3xl mx-auto text-center mb-16">
-              <h1 className="text-4xl md:text-5xl font-bold mb-6">Get in Touch</h1>
-              <p className="text-xl text-muted-foreground">
-                Have questions or feedback? We'd love to hear from you.
-              </p>
-            </div>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
-              <Card>
-                <CardContent className="p-6 flex flex-col items-center text-center">
-                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                    <Mail className="h-6 w-6 text-primary" />
-                  </div>
-                  <h3 className="text-xl font-semibold mb-2">Email Us</h3>
-                  <p className="text-muted-foreground mb-4">Our friendly team is here to help.</p>
-                  <a href="mailto:hello@projectify.com" className="text-primary font-medium">
-                    hello@projectify.com
-                  </a>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardContent className="p-6 flex flex-col items-center text-center">
-                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                    <MapPin className="h-6 w-6 text-primary" />
-                  </div>
-                  <h3 className="text-xl font-semibold mb-2">Visit Us</h3>
-                  <p className="text-muted-foreground mb-4">Come say hello at our office.</p>
-                  <address className="not-italic text-foreground">
-                    123 Innovation Street<br />
-                    San Francisco, CA 94103
-                  </address>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardContent className="p-6 flex flex-col items-center text-center">
-                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                    <Phone className="h-6 w-6 text-primary" />
-                  </div>
-                  <h3 className="text-xl font-semibold mb-2">Call Us</h3>
-                  <p className="text-muted-foreground mb-4">Mon-Fri from 8am to 5pm.</p>
-                  <a href="tel:+1-555-123-4567" className="text-primary font-medium">
-                    +1 (555) 123-4567
-                  </a>
-                </CardContent>
-              </Card>
-            </div>
-            
-            <div className="max-w-3xl mx-auto">
-              <Card>
-                <CardContent className="p-8">
-                  <h2 className="text-2xl font-bold mb-6">Send Us a Message</h2>
-                  <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="name">Your Name</Label>
-                        <Input 
-                          id="name" 
-                          name="name" 
-                          value={formData.name} 
-                          onChange={handleChange} 
-                          placeholder="John Doe" 
-                          required 
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="email">Your Email</Label>
-                        <Input 
-                          id="email" 
-                          name="email" 
-                          type="email" 
-                          value={formData.email} 
-                          onChange={handleChange} 
-                          placeholder="john@example.com" 
-                          required 
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="subject">Subject</Label>
-                      <Input 
-                        id="subject" 
-                        name="subject" 
-                        value={formData.subject} 
-                        onChange={handleChange} 
-                        placeholder="How can we help you?" 
-                        required 
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="message">Message</Label>
-                      <Textarea 
-                        id="message" 
-                        name="message" 
-                        value={formData.message} 
-                        onChange={handleChange} 
-                        placeholder="Your message here..." 
-                        rows={6} 
-                        required 
-                      />
-                    </div>
-                    <Button type="submit" className="w-full" disabled={isSubmitting}>
-                      {isSubmitting ? 'Sending...' : 'Send Message'}
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
-            </div>
+      <div className="container mx-auto py-6 px-4 pt-20">
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-4xl font-bold text-center mb-4">Get in Touch</h1>
+          <p className="text-center text-muted-foreground mb-16">
+            Have questions or feedback? We'd love to hear from you.
+          </p>
+          
+          <div className="grid md:grid-cols-3 gap-6 mb-16">
+            <ContactCard 
+              icon={
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
+                </svg>
+              }
+              title="Email Us"
+              description="Our friendly team is here to help."
+              value="hello@projectify.com"
+            />
+            <ContactCard 
+              icon={
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+                </svg>
+              }
+              title="Visit Us"
+              description="Come say hello at our office."
+              value="123 Innovation Street, San Francisco, CA 94103"
+            />
+            <ContactCard 
+              icon={
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" />
+                </svg>
+              }
+              title="Call Us"
+              description="Mon-Fri from 8am to 5pm."
+              value="+1 (555) 123-4567"
+            />
           </div>
-        </section>
-      </main>
-      
-      <Footer />
+          
+          <div className="mb-16">
+            <h2 className="text-2xl font-bold text-center mb-8">Send Us a Message</h2>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Your Name</Label>
+                  <Input 
+                    id="name" 
+                    name="name" 
+                    placeholder="John Doe"
+                    value={formData.name}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Your Email</Label>
+                  <Input 
+                    id="email" 
+                    name="email" 
+                    type="email"
+                    placeholder="john@example.com"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="subject">Subject</Label>
+                <Input 
+                  id="subject" 
+                  name="subject" 
+                  placeholder="How can we help you?"
+                  value={formData.subject}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="message">Message</Label>
+                <Textarea 
+                  id="message" 
+                  name="message" 
+                  placeholder="Your message here..."
+                  rows={6}
+                  value={formData.message}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div className="text-center">
+                <Button type="submit" size="lg" className="w-full md:w-auto">
+                  Send Message
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
