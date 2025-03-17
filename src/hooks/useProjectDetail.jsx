@@ -1,8 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useTaskManager } from '@/hooks/useTaskManager';
+import { useNotifications } from '@/context/NotificationsContext';
 import { toast } from '@/hooks/use-toast';
 
 // Mock project templates - moved from ProjectDetail component
@@ -41,6 +41,15 @@ const mockProjects = [
     pullRequests: [
       { id: '1', title: 'Feature: Add contact form', author: 'Jane Smith', status: 'open', date: new Date('2023-05-14T15:20:00') },
       { id: '2', title: 'Fix: Mobile responsive layout', author: 'Mike Johnson', status: 'merged', date: new Date('2023-05-13T11:45:00') }
+    ],
+    collaborators: [
+      { id: 'c1', name: 'Jane Smith', email: 'jane@example.com', avatar: 'https://i.pravatar.cc/150?img=2', role: 'editor', addedAt: '2023-05-08T15:20:00' },
+      { id: 'c2', name: 'Mike Johnson', email: 'mike@example.com', avatar: 'https://i.pravatar.cc/150?img=3', role: 'editor', addedAt: '2023-05-09T10:15:00' }
+    ],
+    collaborationActivity: [
+      { id: 'a1', type: 'edit', user: 'Jane Smith', target: 'styles.css', timestamp: '2023-05-14T16:30:00', message: 'Jane Smith edited styles.css' },
+      { id: 'a2', type: 'commit', user: 'Mike Johnson', target: 'main', timestamp: '2023-05-14T15:45:00', message: 'Mike Johnson committed "Update navigation links"' },
+      { id: 'a3', type: 'invitation', user: 'John Doe', target: 'sarah@example.com', timestamp: '2023-05-13T11:20:00', message: 'John Doe invited sarah@example.com to collaborate' }
     ]
   },
   {
@@ -107,6 +116,7 @@ const useProjectDetail = (projectId) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { tasks, getTasksByProject, addTask } = useTaskManager();
+  const { addNotification } = useNotifications();
   const [project, setProject] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -182,6 +192,8 @@ const useProjectDetail = (projectId) => {
               if (!foundProject.meetings) foundProject.meetings = [];
               if (!foundProject.commits) foundProject.commits = [];
               if (!foundProject.pullRequests) foundProject.pullRequests = [];
+              if (!foundProject.collaborators) foundProject.collaborators = [];
+              if (!foundProject.collaborationActivity) foundProject.collaborationActivity = [];
               
               setProject(foundProject);
               setSelectedFile(foundProject.files && foundProject.files.length > 0 ? foundProject.files[0] : null);
@@ -244,12 +256,24 @@ const useProjectDetail = (projectId) => {
     if (!project || !project.files) return;
     
     const updatedFiles = project.files.map(file => 
-      file.id === fileId ? { ...file, content: newContent } : file
+      file.id === fileId ? { ...file, content: newContent, lastEdited: new Date().toISOString() } : file
     );
+    
+    // Create activity record
+    const editedFile = project.files.find(f => f.id === fileId);
+    const newActivity = {
+      id: Date.now().toString(),
+      type: 'edit',
+      user: user?.name || 'You',
+      target: editedFile?.name || 'a file',
+      timestamp: new Date().toISOString(),
+      message: `${user?.name || 'You'} edited ${editedFile?.name || 'a file'}`
+    };
     
     const updatedProject = {
       ...project,
-      files: updatedFiles
+      files: updatedFiles,
+      collaborationActivity: [newActivity, ...(project.collaborationActivity || [])]
     };
     
     saveProjectChanges(updatedProject);
@@ -274,13 +298,26 @@ const useProjectDetail = (projectId) => {
       id: Date.now().toString(),
       name: newFileName.includes('.') ? newFileName : `${newFileName}.${newFileType}`,
       type: newFileType,
-      content: ''
+      content: '',
+      createdAt: new Date().toISOString(),
+      lastEdited: new Date().toISOString()
+    };
+    
+    // Create activity record
+    const newActivity = {
+      id: Date.now().toString(),
+      type: 'edit',
+      user: user?.name || 'You',
+      target: newFile.name,
+      timestamp: new Date().toISOString(),
+      message: `${user?.name || 'You'} created ${newFile.name}`
     };
     
     const updatedFiles = project.files ? [...project.files, newFile] : [newFile];
     const updatedProject = {
       ...project,
-      files: updatedFiles
+      files: updatedFiles,
+      collaborationActivity: [newActivity, ...(project.collaborationActivity || [])]
     };
     
     saveProjectChanges(updatedProject);
@@ -311,10 +348,21 @@ const useProjectDetail = (projectId) => {
       date: new Date()
     };
     
+    // Create activity record
+    const newActivity = {
+      id: Date.now().toString(),
+      type: 'commit',
+      user: user?.name || 'You',
+      target: 'main',
+      timestamp: new Date().toISOString(),
+      message: `${user?.name || 'You'} committed "${commitMessage}"`
+    };
+    
     const updatedCommits = [newCommit, ...(project.commits || [])];
     const updatedProject = {
       ...project,
-      commits: updatedCommits
+      commits: updatedCommits,
+      collaborationActivity: [newActivity, ...(project.collaborationActivity || [])]
     };
     
     saveProjectChanges(updatedProject);
@@ -325,6 +373,22 @@ const useProjectDetail = (projectId) => {
       title: "Changes committed",
       description: "Your changes have been committed successfully",
     });
+    
+    // Notify collaborators
+    if (project.collaborators && project.collaborators.length > 0) {
+      project.collaborators.forEach(collab => {
+        addNotification({
+          type: 'commit',
+          message: `New commit in ${project.title}: "${commitMessage}"`,
+          sender: {
+            id: user?.id || 'currentUser',
+            name: user?.name || 'Current User',
+            avatar: user?.avatar || ''
+          },
+          relatedProject: project.id
+        });
+      });
+    }
   };
 
   const handleAddMeeting = () => {
@@ -349,10 +413,21 @@ const useProjectDetail = (projectId) => {
       attendees: memberNames.length > 0 ? memberNames : ['You']
     };
     
+    // Create activity record
+    const newActivity = {
+      id: Date.now().toString(),
+      type: 'meeting',
+      user: user?.name || 'You',
+      target: newMeeting.title,
+      timestamp: new Date().toISOString(),
+      message: `${user?.name || 'You'} scheduled "${newMeeting.title}" meeting`
+    };
+    
     const updatedMeetings = [...(project.meetings || []), newMeetingData];
     const updatedProject = {
       ...project,
-      meetings: updatedMeetings
+      meetings: updatedMeetings,
+      collaborationActivity: [newActivity, ...(project.collaborationActivity || [])]
     };
     
     saveProjectChanges(updatedProject);
@@ -371,6 +446,22 @@ const useProjectDetail = (projectId) => {
       title: "Meeting scheduled",
       description: `New meeting has been added to the calendar`,
     });
+    
+    // Notify team members
+    if (project.collaborators && project.collaborators.length > 0) {
+      project.collaborators.forEach(collab => {
+        addNotification({
+          type: 'meeting',
+          message: `New meeting for ${project.title}: "${newMeetingData.title}"`,
+          sender: {
+            id: user?.id || 'currentUser',
+            name: user?.name || 'Current User',
+            avatar: user?.avatar || ''
+          },
+          relatedProject: project.id
+        });
+      });
+    }
   };
 
   const handleAddTask = () => {
@@ -400,6 +491,18 @@ const useProjectDetail = (projectId) => {
       }
     };
     
+    // Create activity record
+    const newActivity = {
+      id: Date.now().toString(),
+      type: 'task',
+      user: user?.name || 'You',
+      target: newTask.title,
+      timestamp: new Date().toISOString(),
+      message: `${user?.name || 'You'} created "${newTask.title}" task`
+    };
+    
+    updatedProject.collaborationActivity = [newActivity, ...(project.collaborationActivity || [])];
+    
     saveProjectChanges(updatedProject);
     
     setNewTask({
@@ -415,6 +518,87 @@ const useProjectDetail = (projectId) => {
     toast({
       title: "Task created",
       description: "New task has been added to the project",
+    });
+  };
+
+  const handleAddCollaborator = (collaborator) => {
+    if (!project) return;
+    
+    // Check if already a collaborator
+    if (project.collaborators && project.collaborators.some(c => c.email === collaborator.email)) {
+      toast({
+        title: "Already a collaborator",
+        description: `${collaborator.email} is already a collaborator on this project`,
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Create activity record
+    const newActivity = {
+      id: Date.now().toString(),
+      type: 'invitation',
+      user: user?.name || 'You',
+      target: collaborator.email,
+      timestamp: new Date().toISOString(),
+      message: `${user?.name || 'You'} invited ${collaborator.email} to collaborate`
+    };
+    
+    const updatedProject = {
+      ...project,
+      collaborators: [...(project.collaborators || []), collaborator],
+      collaborationActivity: [newActivity, ...(project.collaborationActivity || [])]
+    };
+    
+    saveProjectChanges(updatedProject);
+    
+    toast({
+      title: "Collaborator added",
+      description: `${collaborator.email} has been added as a collaborator`,
+    });
+    
+    // Send notification
+    addNotification({
+      type: 'invitation',
+      message: `You've been invited to collaborate on project "${project.title}"`,
+      sender: {
+        id: user?.id || 'currentUser',
+        name: user?.name || 'Current User',
+        avatar: user?.avatar || ''
+      },
+      relatedProject: project.id
+    });
+  };
+
+  const handleRemoveCollaborator = (collaboratorId) => {
+    if (!project || !project.collaborators) return;
+    
+    const collaborator = project.collaborators.find(c => c.id === collaboratorId);
+    if (!collaborator) return;
+    
+    const updatedCollaborators = project.collaborators.filter(c => c.id !== collaboratorId);
+    
+    // Create activity record
+    const newActivity = {
+      id: Date.now().toString(),
+      type: 'removal',
+      user: user?.name || 'You',
+      target: collaborator.email,
+      timestamp: new Date().toISOString(),
+      message: `${user?.name || 'You'} removed ${collaborator.email} from collaborators`
+    };
+    
+    const updatedProject = {
+      ...project,
+      collaborators: updatedCollaborators,
+      collaborationActivity: [newActivity, ...(project.collaborationActivity || [])]
+    };
+    
+    saveProjectChanges(updatedProject);
+    
+    toast({
+      title: "Collaborator removed",
+      description: `${collaborator.email} has been removed from the project`,
     });
   };
 
@@ -451,6 +635,8 @@ const useProjectDetail = (projectId) => {
     handleAddCommit,
     handleAddMeeting,
     handleAddTask,
+    handleAddCollaborator,
+    handleRemoveCollaborator,
     handleGoBack
   };
 };

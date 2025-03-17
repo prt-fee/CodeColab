@@ -7,6 +7,7 @@ import MeetingsPanel from '@/components/project/MeetingsPanel';
 import StatsPanel from '@/components/project/StatsPanel';
 import TeamPanel from '@/components/project/TeamPanel';
 import VersionControlPanel from '@/components/project/VersionControlPanel';
+import CollaborationPanel from '@/components/project/CollaborationPanel';
 
 const ProjectDetailTabs = ({
   project,
@@ -17,12 +18,15 @@ const ProjectDetailTabs = ({
   onNewFileClick,
   onCommitClick,
   onAddTaskClick,
-  onAddMeetingClick
+  onAddMeetingClick,
+  onAddCollaborator,
+  onRemoveCollaborator
 }) => {
   return (
     <Tabs defaultValue="code" className="w-full">
       <TabsList className="mb-6">
         <TabsTrigger value="code">Code</TabsTrigger>
+        <TabsTrigger value="collaboration">Collaboration</TabsTrigger>
         <TabsTrigger value="tasks">Tasks</TabsTrigger>
         <TabsTrigger value="meetings">Meetings</TabsTrigger>
         <TabsTrigger value="stats">Statistics</TabsTrigger>
@@ -38,6 +42,16 @@ const ProjectDetailTabs = ({
           onSaveFile={onSaveFile}
           onNewFileClick={onNewFileClick}
           onCommitClick={onCommitClick}
+          collaborators={project.collaborators || []}
+        />
+      </TabsContent>
+      
+      <TabsContent value="collaboration">
+        <CollaborationPanel 
+          project={project}
+          collaborators={project.collaborators || []}
+          onAddCollaborator={onAddCollaborator}
+          onRemoveCollaborator={onRemoveCollaborator}
         />
       </TabsContent>
       
@@ -63,7 +77,10 @@ const ProjectDetailTabs = ({
       </TabsContent>
       
       <TabsContent value="team">
-        <TeamPanel members={project.members || []} />
+        <TeamPanel 
+          members={project.members || []} 
+          onAddCollaborator={onAddCollaborator}
+        />
       </TabsContent>
 
       <TabsContent value="commits">

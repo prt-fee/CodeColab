@@ -64,6 +64,8 @@ const ProjectDetail = () => {
     handleAddCommit,
     handleAddMeeting,
     handleAddTask,
+    handleAddCollaborator,
+    handleRemoveCollaborator,
     handleGoBack
   } = useProjectDetail(id);
 
@@ -110,6 +112,19 @@ const ProjectDetail = () => {
       },
       relatedProject: project.id
     });
+    
+    // Create collaborator object
+    const newCollaborator = {
+      id: Date.now().toString(),
+      name: user.name,
+      email: user.email,
+      avatar: user.avatar || `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`,
+      role: 'editor',
+      addedAt: new Date().toISOString()
+    };
+    
+    // Add as collaborator
+    handleAddCollaborator(newCollaborator);
     
     // Clear search
     setSearchTerm('');
@@ -282,6 +297,8 @@ const ProjectDetail = () => {
           onCommitClick={() => setNewCommitDialogOpen(true)}
           onAddTaskClick={() => setNewTaskDialogOpen(true)}
           onAddMeetingClick={() => setNewMeetingDialogOpen(true)}
+          onAddCollaborator={handleAddCollaborator}
+          onRemoveCollaborator={handleRemoveCollaborator}
         />
         
         {/* Dialogs */}

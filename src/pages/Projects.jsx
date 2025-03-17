@@ -63,7 +63,8 @@ const Projects = () => {
       files: [],
       meetings: [],
       commits: [],
-      pullRequests: []
+      pullRequests: [],
+      collaborators: []
     };
     
     // Add to localStorage
