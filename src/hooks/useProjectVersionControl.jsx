@@ -9,6 +9,7 @@ const useProjectVersionControl = (project, saveProjectChanges) => {
   const { addNotification } = useNotifications();
   const [newCommitDialogOpen, setNewCommitDialogOpen] = useState(false);
   const [commitMessage, setCommitMessage] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleAddCommit = () => {
     if (!commitMessage.trim()) {
@@ -70,12 +71,68 @@ const useProjectVersionControl = (project, saveProjectChanges) => {
     }
   };
 
+  // Handle file upload for version control
+  const handleFileUpload = (files) => {
+    if (!files || files.length === 0) return;
+    
+    setIsUploading(true);
+    
+    try {
+      const newFiles = Array.from(files).map(file => {
+        return {
+          id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+          name: file.name,
+          type: file.type.split('/')[1] || 'unknown',
+          size: file.size,
+          content: '', // Actual content would be read from the file
+          createdAt: new Date().toISOString(),
+          lastEdited: new Date().toISOString()
+        };
+      });
+      
+      // Create activity records
+      const newActivities = newFiles.map(file => ({
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+        type: 'upload',
+        user: user?.name || 'You',
+        target: file.name,
+        timestamp: new Date().toISOString(),
+        message: `${user?.name || 'You'} uploaded ${file.name}`
+      }));
+      
+      const updatedFiles = [...(project.files || []), ...newFiles];
+      const updatedProject = {
+        ...project,
+        files: updatedFiles,
+        collaborationActivity: [...newActivities, ...(project.collaborationActivity || [])]
+      };
+      
+      saveProjectChanges(updatedProject);
+      
+      toast({
+        title: "Files uploaded",
+        description: `Successfully uploaded ${newFiles.length} files`,
+      });
+    } catch (error) {
+      console.error('Error uploading files:', error);
+      toast({
+        title: "Upload failed",
+        description: "There was an error uploading your files",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   return {
     newCommitDialogOpen,
     setNewCommitDialogOpen,
     commitMessage,
     setCommitMessage,
-    handleAddCommit
+    handleAddCommit,
+    handleFileUpload,
+    isUploading
   };
 };
 

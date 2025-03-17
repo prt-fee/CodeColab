@@ -162,8 +162,8 @@ const Projects = () => {
       </div>
       
       <NewProjectDialog 
-        isOpen={isDialogOpen} 
-        onOpenChange={setIsDialogOpen}
+        open={isDialogOpen} 
+        onClose={() => setIsDialogOpen(false)}
         newProject={newProject}
         setNewProject={setNewProject}
         onCreateProject={handleCreateProject}

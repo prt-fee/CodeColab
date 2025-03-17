@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -31,7 +30,7 @@ const colorOptions = [
   { id: 'cyan', label: 'Cyan', value: 'cyan', color: 'bg-cyan-500' },
 ];
 
-const NewProjectDialog = ({ open, onClose, onCreateProject }) => {
+const NewProjectDialog = ({ open, onClose, newProject, setNewProject, onCreateProject }) => {
   const navigate = useNavigate();
   
   const [step, setStep] = useState(1);
@@ -46,6 +45,22 @@ const NewProjectDialog = ({ open, onClose, onCreateProject }) => {
     tags: []
   });
   
+  useEffect(() => {
+    if (open) {
+      setStep(1);
+      setFormData({
+        title: '',
+        description: '',
+        template: '',
+        color: 'blue',
+        startDate: new Date(),
+        dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+        members: 2,
+        tags: []
+      });
+    }
+  }, [open]);
+  
   const [isCreating, setIsCreating] = useState(false);
   
   const updateFormData = (field, value) => {
@@ -57,7 +72,7 @@ const NewProjectDialog = ({ open, onClose, onCreateProject }) => {
   
   const handleNext = () => {
     if (step === 1) {
-      if (!formData.title.trim()) {
+      if (!formData.title?.trim()) {
         toast({
           title: "Project title required",
           description: "Please enter a title for your project",
@@ -87,7 +102,6 @@ const NewProjectDialog = ({ open, onClose, onCreateProject }) => {
     setIsCreating(true);
     
     try {
-      // Generate a random ID for the project
       const projectId = String(Date.now());
       
       const newProject = {
@@ -103,30 +117,21 @@ const NewProjectDialog = ({ open, onClose, onCreateProject }) => {
         commits: []
       };
       
-      // Get existing projects from localStorage or initialize empty array
       const existingProjects = JSON.parse(localStorage.getItem('user_projects') || '[]');
       
-      // Add new project to array
       const updatedProjects = [...existingProjects, newProject];
       
-      // Save to localStorage
       localStorage.setItem('user_projects', JSON.stringify(updatedProjects));
       
-      // Call the onCreateProject callback if provided
       if (onCreateProject) {
         onCreateProject(newProject);
       }
       
-      // Success toast
       toast({
         title: "Project created",
         description: `${formData.title} has been created successfully`,
       });
       
-      // Close dialog
-      onClose();
-      
-      // Navigate to the new project
       navigate(`/projects/${projectId}`);
     } catch (error) {
       console.error('Failed to create project:', error);
@@ -140,24 +145,8 @@ const NewProjectDialog = ({ open, onClose, onCreateProject }) => {
     }
   };
   
-  // Reset form data when dialog is closed
-  const handleDialogClose = () => {
-    setFormData({
-      title: '',
-      description: '',
-      template: '',
-      color: 'blue',
-      startDate: new Date(),
-      dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
-      members: 2,
-      tags: []
-    });
-    setStep(1);
-    onClose();
-  };
-  
   return (
-    <Dialog open={open} onOpenChange={handleDialogClose}>
+    <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px] p-0">
         <DialogHeader className="p-6 pb-0">
           <DialogTitle className="text-2xl font-bold">
