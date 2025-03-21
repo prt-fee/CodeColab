@@ -51,6 +51,7 @@
     "dotenv": "^16.4.7",
     "embla-carousel-react": "^8.3.0",
     "express": "^4.21.2",
+    "firebase": "^10.7.2",
     "gsap": "^3.12.5",
     "input-otp": "^1.2.4",
     "jsonwebtoken": "^9.0.2",
