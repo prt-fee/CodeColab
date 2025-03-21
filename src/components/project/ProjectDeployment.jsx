@@ -6,9 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Upload, Terminal, ExternalLink, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { storage } from '@/services/firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { useAuth } from '@/context/AuthContext';
 
 const BuildLog = ({ log }) => {
   const getLogStyle = (message) => {
@@ -38,7 +35,6 @@ const ProjectDeployment = () => {
   const [buildStatus, setBuildStatus] = useState('');
   const [deploymentUrl, setDeploymentUrl] = useState('');
   const [buildLogs, setBuildLogs] = useState([]);
-  const { user } = useAuth();
 
   const handleFileChange = (e) => {
     setFiles(Array.from(e.target.files));
@@ -48,93 +44,70 @@ const ProjectDeployment = () => {
     setBuildLogs(prev => [...prev, { message, timestamp: new Date() }]);
   };
 
-  const uploadToFirebase = async (file) => {
-    const storageRef = ref(storage, `projects/${user.id}/${Date.now()}_${file.name}`);
-    await uploadBytes(storageRef, file);
-    return await getDownloadURL(storageRef);
-  };
-
   const simulateDeployment = async () => {
     setUploading(true);
     setBuildStatus('building');
     setBuildLogs([]);
     
-    try {
-      // Begin build process with logs
-      addLog('Starting deployment process...');
-      
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      addLog('Uploading files to Firebase Storage...');
-      
-      // Actually upload files to Firebase
-      const uploadPromises = files.map(file => uploadToFirebase(file));
-      const uploadedUrls = await Promise.all(uploadPromises);
-      
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      addLog(`Successfully uploaded ${files.length} files to Firebase Storage ✅`);
-      
-      await new Promise(resolve => setTimeout(resolve, 800));
-      addLog('Installing dependencies...');
-      
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      addLog('npm install completed successfully ✅');
-      
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      addLog('Building project...');
-      
-      await new Promise(resolve => setTimeout(resolve, 2500));
+    // Simulate upload and build process with logs
+    addLog('Starting deployment process...');
+    
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    addLog('Uploading files to server...');
+    
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    addLog('Upload complete ✅');
+    
+    await new Promise(resolve => setTimeout(resolve, 800));
+    addLog('Installing dependencies...');
+    
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    addLog('npm install completed successfully ✅');
+    
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    addLog('Building project...');
+    
+    await new Promise(resolve => setTimeout(resolve, 2500));
+    
+    // Randomly succeed or show error (80% success rate)
+    if (Math.random() > 0.2) {
       addLog('Build completed successfully ✅');
-      
       await new Promise(resolve => setTimeout(resolve, 1000));
       addLog('Running tests...');
-      
       await new Promise(resolve => setTimeout(resolve, 1500));
       addLog('All tests passed ✅');
-      
       await new Promise(resolve => setTimeout(resolve, 800));
       addLog('Deploying to production server...');
-      
       await new Promise(resolve => setTimeout(resolve, 2000));
       addLog('Deployment successful! ✅');
       
       // Set success state
       setBuildStatus('success');
-      
-      // Generate a deployment URL
-      const randomString = Math.random().toString(36).substring(2, 8);
-      const url = `https://${randomString}.projectify-app.com`;
-      setDeploymentUrl(url);
+      setDeploymentUrl('https://your-project-12345.projectify-app.com');
       
       toast({
         title: 'Deployment Successful',
         description: 'Your project has been deployed successfully',
       });
-    } catch (error) {
-      console.error('Deployment error:', error);
-      addLog(`Error during deployment process ❌: ${error.message}`);
+    } else {
+      addLog('Error during build process ❌');
+      addLog('Error: Module not found: Error: Can\'t resolve \'./missing-module\'');
+      
+      // Set error state
       setBuildStatus('error');
       
       toast({
         title: 'Deployment Failed',
-        description: error.message || 'There was an error during the deployment process',
+        description: 'There was an error during the build process',
         variant: 'destructive'
       });
-    } finally {
-      setUploading(false);
     }
+    
+    setUploading(false);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!user) {
-      toast({
-        title: 'Authentication Required',
-        description: 'Please sign in to deploy projects',
-        variant: 'destructive'
-      });
-      return;
-    }
-    
     if (files.length === 0) {
       toast({
         title: 'No Files Selected',

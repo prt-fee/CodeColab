@@ -1,16 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword, 
-  signOut, 
-  onAuthStateChanged,
-  updateProfile
-} from 'firebase/auth';
-import { auth, db } from '../services/firebase';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { toast } from '@/hooks/use-toast';
 
 // Create the context
 const AuthContext = createContext(null);
@@ -23,169 +13,87 @@ export const AuthProvider = ({ children }) => {
 
   // Check if user is already logged in
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        try {
-          // Get additional user data from Firestore
-          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-          const userData = userDoc.data();
-          
-          const userObj = {
-            id: firebaseUser.uid,
-            name: firebaseUser.displayName || userData?.name || firebaseUser.email.split('@')[0],
-            email: firebaseUser.email,
-            avatar: firebaseUser.photoURL || userData?.avatar || 'https://randomuser.me/api/portraits/men/32.jpg'
-          };
-          
-          setUser(userObj);
-          localStorage.setItem('projectify_user', JSON.stringify(userObj));
-        } catch (error) {
-          console.error('Error fetching user data:', error);
-          toast({
-            title: "Error",
-            description: "Failed to load user data",
-            variant: "destructive"
-          });
-        }
-      } else {
-        setUser(null);
-        localStorage.removeItem('projectify_user');
+    const checkAuth = () => {
+      const storedUser = localStorage.getItem('projectify_user');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
       }
       setIsLoading(false);
-    });
+    };
 
-    return () => unsubscribe();
+    checkAuth();
   }, []);
 
   // Login function
-  const login = async (email, password) => {
+  const login = (email, password) => {
     setIsLoading(true);
     
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const firebaseUser = userCredential.user;
-      
-      // Get additional user data from Firestore
-      const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-      
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        const userObj = {
-          id: firebaseUser.uid,
-          name: firebaseUser.displayName || userData.name,
-          email: firebaseUser.email,
-          avatar: firebaseUser.photoURL || userData.avatar || 'https://randomuser.me/api/portraits/men/32.jpg'
+      // In a real app, you would validate credentials with your API
+      if (email && password) {
+        // Instead of using MOCK_USER, create a user with the provided email
+        const loginUser = {
+          id: '1',
+          name: email.split('@')[0], // Use the part before @ as a simple name
+          email: email,
+          avatar: 'https://randomuser.me/api/portraits/men/32.jpg'
         };
         
-        setUser(userObj);
-        localStorage.setItem('projectify_user', JSON.stringify(userObj));
+        setUser(loginUser);
+        localStorage.setItem('projectify_user', JSON.stringify(loginUser));
+        setIsLoading(false);
+        return true;
       } else {
-        // If user document doesn't exist in Firestore, create one
-        const userObj = {
-          id: firebaseUser.uid,
-          name: firebaseUser.displayName || email.split('@')[0],
-          email: firebaseUser.email,
-          avatar: firebaseUser.photoURL || 'https://randomuser.me/api/portraits/men/32.jpg',
-          createdAt: new Date().toISOString()
-        };
-        
-        await setDoc(doc(db, 'users', firebaseUser.uid), userObj);
-        setUser(userObj);
-        localStorage.setItem('projectify_user', JSON.stringify(userObj));
+        throw new Error('Invalid credentials');
       }
-      
-      return true;
     } catch (error) {
       setIsLoading(false);
       console.error('Login error:', error);
       throw error;
-    } finally {
-      setIsLoading(false);
     }
   };
 
   // Register function
-  const register = async (name, email, password) => {
+  const register = (name, email, password) => {
     setIsLoading(true);
     
     try {
-      // Create user in Firebase Authentication
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const firebaseUser = userCredential.user;
-      
-      // Update display name
-      await updateProfile(firebaseUser, { displayName: name });
-      
-      // Create user document in Firestore
-      const userObj = {
-        id: firebaseUser.uid,
-        name: name,
-        email: email,
-        avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
-        createdAt: new Date().toISOString()
-      };
-      
-      await setDoc(doc(db, 'users', firebaseUser.uid), userObj);
-      
-      setUser(userObj);
-      localStorage.setItem('projectify_user', JSON.stringify(userObj));
-      return true;
+      // In a real app, you would register the user with your API
+      if (name && email && password) {
+        const newUser = {
+          id: '1',
+          name: name,
+          email: email,
+          avatar: 'https://randomuser.me/api/portraits/men/32.jpg'
+        };
+        setUser(newUser);
+        localStorage.setItem('projectify_user', JSON.stringify(newUser));
+        setIsLoading(false);
+        return true;
+      } else {
+        throw new Error('Invalid registration data');
+      }
     } catch (error) {
       setIsLoading(false);
       console.error('Registration error:', error);
       throw error;
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  // Logout function
-  const logout = async () => {
-    try {
-      await signOut(auth);
-      setUser(null);
-      localStorage.removeItem('projectify_user');
-      navigate('/');
-    } catch (error) {
-      console.error('Logout error:', error);
-      toast({
-        title: "Error",
-        description: "Failed to log out",
-        variant: "destructive"
-      });
-    }
+  // Logout function - updated to redirect to index page
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem('projectify_user');
+    navigate('/'); // Changed from /login to / (index page)
   };
 
   // Update user function
-  const updateUser = async (updatedUserData) => {
+  const updateUser = (updatedUserData) => {
     if (user) {
-      try {
-        // Update in Firestore
-        await setDoc(doc(db, 'users', user.id), updatedUserData, { merge: true });
-        
-        // Update local state
-        const updatedUser = {...user, ...updatedUserData};
-        setUser(updatedUser);
-        localStorage.setItem('projectify_user', JSON.stringify(updatedUser));
-        
-        // Update profile in Firebase Auth if needed
-        if (updatedUserData.name || updatedUserData.avatar) {
-          await updateProfile(auth.currentUser, {
-            displayName: updatedUserData.name || user.name,
-            photoURL: updatedUserData.avatar || user.avatar
-          });
-        }
-        
-        return true;
-      } catch (error) {
-        console.error('Error updating user:', error);
-        toast({
-          title: "Error",
-          description: "Failed to update user profile",
-          variant: "destructive"
-        });
-        return false;
-      }
+      const updatedUser = {...user, ...updatedUserData};
+      setUser(updatedUser);
+      localStorage.setItem('projectify_user', JSON.stringify(updatedUser));
+      return true;
     }
     return false;
   };

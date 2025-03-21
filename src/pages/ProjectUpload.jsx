@@ -1,33 +1,9 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import NavBar from '@/components/NavBar';
 import ProjectDeployment from '@/components/project/ProjectDeployment';
-import { useAuth } from '@/context/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
 
 const ProjectUpload = () => {
-  const { user, loading, isAuthenticated } = useAuth();
-  const navigate = useNavigate();
-
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!loading && !isAuthenticated) {
-      navigate('/login');
-    }
-  }, [isAuthenticated, loading, navigate]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  // If not authenticated, don't render the content
-  if (!isAuthenticated) return null;
-
   return (
     <div className="min-h-screen bg-background">
       <NavBar />
