@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { firebaseAuth } from '@/services/firebase';
+import { auth, firebaseAuth } from '@/services/firebase';
 import { toast } from '@/hooks/use-toast';
 
 // Create the context
@@ -16,7 +16,7 @@ export const AuthProvider = ({ children }) => {
   // Check if user is already logged in
   useEffect(() => {
     const checkAuth = () => {
-      const unsubscribe = firebaseAuth.getAuth().onAuthStateChanged((currentUser) => {
+      const unsubscribe = auth.onAuthStateChanged((currentUser) => {
         if (currentUser) {
           // Convert Firebase user to our app user format
           const appUser = {
@@ -56,6 +56,7 @@ export const AuthProvider = ({ children }) => {
       
       setUser(appUser);
       setIsLoading(false);
+      navigate('/dashboard');
       return true;
     } catch (error) {
       setIsLoading(false);
@@ -81,6 +82,7 @@ export const AuthProvider = ({ children }) => {
       
       setUser(appUser);
       setIsLoading(false);
+      navigate('/dashboard');
       return true;
     } catch (error) {
       setIsLoading(false);
@@ -110,7 +112,7 @@ export const AuthProvider = ({ children }) => {
     if (user) {
       try {
         // Update Firebase profile if needed
-        if (updatedUserData.name && firebaseAuth.getCurrentUser()) {
+        if (updatedUserData.name && auth.currentUser) {
           await firebaseAuth.updateProfile({
             displayName: updatedUserData.name
           });

@@ -1,4 +1,3 @@
-
 import { initializeApp } from 'firebase/app';
 import { 
   getAuth, 
@@ -68,6 +67,16 @@ const firebaseAuth = {
       return true;
     } catch (error) {
       console.error("Firebase logout error:", error);
+      throw error;
+    }
+  },
+
+  updateProfile: async (profileData) => {
+    try {
+      await updateProfile(auth.currentUser, profileData);
+      return true;
+    } catch (error) {
+      console.error("Profile update error:", error);
       throw error;
     }
   },
@@ -340,4 +349,4 @@ const firebaseStorage = {
   }
 };
 
-export { firebaseAuth, firestore, firebaseStorage };
+export { auth, firebaseAuth, firestore, firebaseStorage, db, storage };
