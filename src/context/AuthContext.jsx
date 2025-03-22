@@ -1,6 +1,8 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { firebaseAuth } from '@/services/firebase';
+import { toast } from '@/hooks/use-toast';
 
 // Create the context
 const AuthContext = createContext(null);
@@ -14,38 +16,47 @@ export const AuthProvider = ({ children }) => {
   // Check if user is already logged in
   useEffect(() => {
     const checkAuth = () => {
-      const storedUser = localStorage.getItem('projectify_user');
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
-      }
-      setIsLoading(false);
+      const unsubscribe = firebaseAuth.getAuth().onAuthStateChanged((currentUser) => {
+        if (currentUser) {
+          // Convert Firebase user to our app user format
+          const appUser = {
+            id: currentUser.uid,
+            name: currentUser.displayName || currentUser.email.split('@')[0],
+            email: currentUser.email,
+            avatar: currentUser.photoURL || 'https://randomuser.me/api/portraits/men/32.jpg'
+          };
+          setUser(appUser);
+        } else {
+          setUser(null);
+        }
+        setIsLoading(false);
+      });
+
+      // Clean up subscription
+      return () => unsubscribe();
     };
 
     checkAuth();
   }, []);
 
   // Login function
-  const login = (email, password) => {
+  const login = async (email, password) => {
     setIsLoading(true);
     
     try {
-      // In a real app, you would validate credentials with your API
-      if (email && password) {
-        // Instead of using MOCK_USER, create a user with the provided email
-        const loginUser = {
-          id: '1',
-          name: email.split('@')[0], // Use the part before @ as a simple name
-          email: email,
-          avatar: 'https://randomuser.me/api/portraits/men/32.jpg'
-        };
-        
-        setUser(loginUser);
-        localStorage.setItem('projectify_user', JSON.stringify(loginUser));
-        setIsLoading(false);
-        return true;
-      } else {
-        throw new Error('Invalid credentials');
-      }
+      const firebaseUser = await firebaseAuth.login(email, password);
+      
+      // Convert Firebase user to our app user format
+      const appUser = {
+        id: firebaseUser.uid,
+        name: firebaseUser.displayName || email.split('@')[0],
+        email: firebaseUser.email,
+        avatar: firebaseUser.photoURL || 'https://randomuser.me/api/portraits/men/32.jpg'
+      };
+      
+      setUser(appUser);
+      setIsLoading(false);
+      return true;
     } catch (error) {
       setIsLoading(false);
       console.error('Login error:', error);
@@ -54,25 +65,23 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Register function
-  const register = (name, email, password) => {
+  const register = async (name, email, password) => {
     setIsLoading(true);
     
     try {
-      // In a real app, you would register the user with your API
-      if (name && email && password) {
-        const newUser = {
-          id: '1',
-          name: name,
-          email: email,
-          avatar: 'https://randomuser.me/api/portraits/men/32.jpg'
-        };
-        setUser(newUser);
-        localStorage.setItem('projectify_user', JSON.stringify(newUser));
-        setIsLoading(false);
-        return true;
-      } else {
-        throw new Error('Invalid registration data');
-      }
+      const firebaseUser = await firebaseAuth.register(name, email, password);
+      
+      // Convert Firebase user to our app user format
+      const appUser = {
+        id: firebaseUser.uid,
+        name: name,
+        email: firebaseUser.email,
+        avatar: firebaseUser.photoURL || 'https://randomuser.me/api/portraits/men/32.jpg'
+      };
+      
+      setUser(appUser);
+      setIsLoading(false);
+      return true;
     } catch (error) {
       setIsLoading(false);
       console.error('Registration error:', error);
@@ -80,20 +89,45 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Logout function - updated to redirect to index page
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('projectify_user');
-    navigate('/'); // Changed from /login to / (index page)
+  // Logout function - updated to use Firebase
+  const logout = async () => {
+    try {
+      await firebaseAuth.logout();
+      setUser(null);
+      navigate('/'); // Redirect to index page
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast({
+        title: "Logout Error",
+        description: error.message || "An error occurred during logout",
+        variant: "destructive"
+      });
+    }
   };
 
   // Update user function
-  const updateUser = (updatedUserData) => {
+  const updateUser = async (updatedUserData) => {
     if (user) {
-      const updatedUser = {...user, ...updatedUserData};
-      setUser(updatedUser);
-      localStorage.setItem('projectify_user', JSON.stringify(updatedUser));
-      return true;
+      try {
+        // Update Firebase profile if needed
+        if (updatedUserData.name && firebaseAuth.getCurrentUser()) {
+          await firebaseAuth.updateProfile({
+            displayName: updatedUserData.name
+          });
+        }
+        
+        const updatedUser = {...user, ...updatedUserData};
+        setUser(updatedUser);
+        return true;
+      } catch (error) {
+        console.error('Update user error:', error);
+        toast({
+          title: "Update Error",
+          description: error.message || "An error occurred updating profile",
+          variant: "destructive"
+        });
+        return false;
+      }
     }
     return false;
   };

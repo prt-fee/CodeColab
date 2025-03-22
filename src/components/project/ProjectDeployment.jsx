@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Upload, Terminal, ExternalLink, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/AuthContext';
+import { firebaseStorage } from '@/services/firebase';
 
 const BuildLog = ({ log }) => {
   const getLogStyle = (message) => {
@@ -30,6 +31,7 @@ const BuildLog = ({ log }) => {
 };
 
 const ProjectDeployment = () => {
+  const { user } = useAuth();
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [buildStatus, setBuildStatus] = useState('');
@@ -44,66 +46,105 @@ const ProjectDeployment = () => {
     setBuildLogs(prev => [...prev, { message, timestamp: new Date() }]);
   };
 
+  const uploadFiles = async (files) => {
+    if (!user) {
+      toast({
+        title: 'Authentication Error',
+        description: 'You must be logged in to upload files',
+        variant: 'destructive'
+      });
+      return null;
+    }
+
+    const uploadedUrls = [];
+    for (const file of files) {
+      const path = `projects/${user.id}/${Date.now()}_${file.name}`;
+      addLog(`Uploading ${file.name}...`);
+      const url = await firebaseStorage.uploadFile(file, path);
+      uploadedUrls.push({ name: file.name, url });
+      addLog(`${file.name} uploaded successfully ✅`);
+    }
+    return uploadedUrls;
+  };
+
   const simulateDeployment = async () => {
     setUploading(true);
     setBuildStatus('building');
     setBuildLogs([]);
     
-    // Simulate upload and build process with logs
-    addLog('Starting deployment process...');
-    
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    addLog('Uploading files to server...');
-    
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    addLog('Upload complete ✅');
-    
-    await new Promise(resolve => setTimeout(resolve, 800));
-    addLog('Installing dependencies...');
-    
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    addLog('npm install completed successfully ✅');
-    
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    addLog('Building project...');
-    
-    await new Promise(resolve => setTimeout(resolve, 2500));
-    
-    // Randomly succeed or show error (80% success rate)
-    if (Math.random() > 0.2) {
-      addLog('Build completed successfully ✅');
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      addLog('Running tests...');
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      addLog('All tests passed ✅');
+    try {
+      // Simulate upload and build process with logs
+      addLog('Starting deployment process...');
+      
+      // Actually upload files to Firebase Storage
+      const uploadedFiles = await uploadFiles(files);
+      if (!uploadedFiles) {
+        setBuildStatus('error');
+        setUploading(false);
+        return;
+      }
+      
       await new Promise(resolve => setTimeout(resolve, 800));
-      addLog('Deploying to production server...');
+      addLog('Installing dependencies...');
+      
       await new Promise(resolve => setTimeout(resolve, 2000));
-      addLog('Deployment successful! ✅');
+      addLog('npm install completed successfully ✅');
       
-      // Set success state
-      setBuildStatus('success');
-      setDeploymentUrl('https://your-project-12345.projectify-app.com');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      addLog('Building project...');
       
-      toast({
-        title: 'Deployment Successful',
-        description: 'Your project has been deployed successfully',
-      });
-    } else {
-      addLog('Error during build process ❌');
-      addLog('Error: Module not found: Error: Can\'t resolve \'./missing-module\'');
+      await new Promise(resolve => setTimeout(resolve, 2500));
       
-      // Set error state
+      // Randomly succeed or show error (80% success rate)
+      if (Math.random() > 0.2) {
+        addLog('Build completed successfully ✅');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        addLog('Running tests...');
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        addLog('All tests passed ✅');
+        await new Promise(resolve => setTimeout(resolve, 800));
+        addLog('Deploying to production server...');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        addLog('Deployment successful! ✅');
+        
+        // Generate a fake deployment URL based on uploaded files
+        const randomString = Math.random().toString(36).substring(2, 8);
+        const deployUrl = `https://your-project-${randomString}.projectify-app.com`;
+        
+        // Set success state
+        setBuildStatus('success');
+        setDeploymentUrl(deployUrl);
+        
+        toast({
+          title: 'Deployment Successful',
+          description: 'Your project has been deployed successfully',
+        });
+      } else {
+        addLog('Error during build process ❌');
+        addLog('Error: Module not found: Error: Can\'t resolve \'./missing-module\'');
+        
+        // Set error state
+        setBuildStatus('error');
+        
+        toast({
+          title: 'Deployment Failed',
+          description: 'There was an error during the build process',
+          variant: 'destructive'
+        });
+      }
+    } catch (error) {
+      console.error('Deployment error:', error);
+      addLog(`Error: ${error.message} ❌`);
       setBuildStatus('error');
       
       toast({
         title: 'Deployment Failed',
-        description: 'There was an error during the build process',
+        description: error.message || 'There was an error during the deployment',
         variant: 'destructive'
       });
+    } finally {
+      setUploading(false);
     }
-    
-    setUploading(false);
   };
 
   const handleSubmit = async (e) => {
