@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import NavBar from '@/components/NavBar';
@@ -20,7 +19,6 @@ import useProjectDetail from '@/hooks/useProjectDetail';
 import { toast } from '@/hooks/use-toast';
 import { useNotifications } from '@/context/NotificationsContext';
 
-// Mock users for search feature
 const MOCK_USERS = [
   { id: 'u1', name: 'John Doe', email: 'john@example.com', avatar: '' },
   { id: 'u2', name: 'Jane Smith', email: 'jane@example.com', avatar: '' },
@@ -63,6 +61,7 @@ const ProjectDetail = () => {
     handleAddFile,
     handleAddCommit,
     handleAddMeeting,
+    handleDeleteMeeting,
     handleAddTask,
     handleAddCollaborator,
     handleRemoveCollaborator,
@@ -83,7 +82,6 @@ const ProjectDetail = () => {
   };
 
   const handleAddUser = (user) => {
-    // Check if user is already a member
     const isMember = project.members && project.members.some(member => member.id === user.id);
     
     if (isMember) {
@@ -95,13 +93,11 @@ const ProjectDetail = () => {
       return;
     }
     
-    // Add user to project (in a real app, this would be an API call)
     toast({
       title: "Invitation sent",
       description: `Invitation has been sent to ${user.name}`
     });
     
-    // Create notification for the invited user
     addNotification({
       type: 'invitation',
       message: `You've been invited to join the project "${project.title}"`,
@@ -113,7 +109,6 @@ const ProjectDetail = () => {
       relatedProject: project.id
     });
     
-    // Create collaborator object
     const newCollaborator = {
       id: Date.now().toString(),
       name: user.name,
@@ -123,10 +118,8 @@ const ProjectDetail = () => {
       addedAt: new Date().toISOString()
     };
     
-    // Add as collaborator
     handleAddCollaborator(newCollaborator);
     
-    // Clear search
     setSearchTerm('');
     setSearchResults([]);
   };
@@ -150,7 +143,6 @@ const ProjectDetail = () => {
     );
   }
 
-  // Format the due date
   const formatDate = (date) => {
     if (!date) return 'No date set';
     return new Intl.DateTimeFormat('en-US', { 
@@ -222,7 +214,6 @@ const ProjectDetail = () => {
                     />
                   </div>
                   
-                  {/* Search results */}
                   {searchResults.length > 0 && (
                     <div className="mb-6 space-y-1 border rounded-md p-1">
                       <h3 className="px-2 pt-2 text-sm font-medium">Search Results</h3>
@@ -254,7 +245,6 @@ const ProjectDetail = () => {
                     </div>
                   )}
                   
-                  {/* Current team members */}
                   <div>
                     <h3 className="text-sm font-medium mb-3">Team Members</h3>
                     <div className="space-y-2">
@@ -297,11 +287,11 @@ const ProjectDetail = () => {
           onCommitClick={() => setNewCommitDialogOpen(true)}
           onAddTaskClick={() => setNewTaskDialogOpen(true)}
           onAddMeetingClick={() => setNewMeetingDialogOpen(true)}
+          onDeleteMeeting={handleDeleteMeeting}
           onAddCollaborator={handleAddCollaborator}
           onRemoveCollaborator={handleRemoveCollaborator}
         />
         
-        {/* Dialogs */}
         <NewFileDialog
           isOpen={newFileDialogOpen}
           onOpenChange={setNewFileDialogOpen}

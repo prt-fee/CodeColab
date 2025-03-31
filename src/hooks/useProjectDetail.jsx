@@ -41,7 +41,8 @@ const useProjectDetail = (projectId) => {
     setNewMeetingDialogOpen,
     newMeeting,
     setNewMeeting,
-    handleAddMeeting
+    handleAddMeeting,
+    handleDeleteMeeting
   } = useProjectMeetings(project, saveProjectChanges);
 
   const {
@@ -88,6 +89,7 @@ const useProjectDetail = (projectId) => {
     newMeeting, 
     setNewMeeting,
     handleAddMeeting,
+    handleDeleteMeeting,
     
     // Tasks
     projectTasks,

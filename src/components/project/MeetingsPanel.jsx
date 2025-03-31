@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, Users, Clock, X } from 'lucide-react';
@@ -36,22 +36,33 @@ const MeetingItem = ({ meeting, onDelete }) => {
         </p>
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
           <Users className="h-3 w-3" />
-          <span>{meeting.attendees.length} attendees</span>
+          <span>{(meeting.attendees || []).length} attendees</span>
         </div>
       </CardContent>
     </Card>
   );
 };
 
-const MeetingsPanel = ({ meetings, onAddMeetingClick }) => {
-  const [projectMeetings, setProjectMeetings] = useState(meetings || []);
+const MeetingsPanel = ({ meetings = [], onAddMeetingClick, onDeleteMeeting }) => {
+  const [projectMeetings, setProjectMeetings] = useState(meetings);
+  
+  // Update meetings when the prop changes
+  useEffect(() => {
+    setProjectMeetings(meetings);
+  }, [meetings]);
 
   const handleDeleteMeeting = (id) => {
-    setProjectMeetings(projectMeetings.filter(meeting => meeting.id !== id));
-    toast({
-      title: "Meeting deleted",
-      description: "The meeting has been removed from the calendar"
-    });
+    // Call the parent component's delete handler if provided
+    if (onDeleteMeeting) {
+      onDeleteMeeting(id);
+    } else {
+      // Fallback to local state update if no handler provided
+      setProjectMeetings(projectMeetings.filter(meeting => meeting.id !== id));
+      toast({
+        title: "Meeting deleted",
+        description: "The meeting has been removed from the calendar"
+      });
+    }
   };
 
   return (
@@ -69,7 +80,7 @@ const MeetingsPanel = ({ meetings, onAddMeetingClick }) => {
         </Button>
       </CardHeader>
       <CardContent>
-        {projectMeetings.length === 0 ? (
+        {(!projectMeetings || projectMeetings.length === 0) ? (
           <div className="text-center py-8">
             <p className="text-muted-foreground mb-4">No meetings scheduled</p>
             <Button onClick={onAddMeetingClick}>

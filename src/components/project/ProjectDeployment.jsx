@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Upload, Terminal, ExternalLink, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import useProjectUploader from '@/hooks/useProjectUploader';
 
 const BuildLog = ({ log }) => {
   const getLogStyle = (message) => {
@@ -31,79 +32,16 @@ const BuildLog = ({ log }) => {
 
 const ProjectDeployment = () => {
   const [files, setFiles] = useState([]);
-  const [uploading, setUploading] = useState(false);
-  const [buildStatus, setBuildStatus] = useState('');
-  const [deploymentUrl, setDeploymentUrl] = useState('');
-  const [buildLogs, setBuildLogs] = useState([]);
+  const {
+    uploading,
+    buildStatus,
+    deploymentUrl,
+    buildLogs,
+    uploadAndDeploy
+  } = useProjectUploader();
 
   const handleFileChange = (e) => {
     setFiles(Array.from(e.target.files));
-  };
-
-  const addLog = (message) => {
-    setBuildLogs(prev => [...prev, { message, timestamp: new Date() }]);
-  };
-
-  const simulateDeployment = async () => {
-    setUploading(true);
-    setBuildStatus('building');
-    setBuildLogs([]);
-    
-    // Simulate upload and build process with logs
-    addLog('Starting deployment process...');
-    
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    addLog('Uploading files to server...');
-    
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    addLog('Upload complete ✅');
-    
-    await new Promise(resolve => setTimeout(resolve, 800));
-    addLog('Installing dependencies...');
-    
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    addLog('npm install completed successfully ✅');
-    
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    addLog('Building project...');
-    
-    await new Promise(resolve => setTimeout(resolve, 2500));
-    
-    // Randomly succeed or show error (80% success rate)
-    if (Math.random() > 0.2) {
-      addLog('Build completed successfully ✅');
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      addLog('Running tests...');
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      addLog('All tests passed ✅');
-      await new Promise(resolve => setTimeout(resolve, 800));
-      addLog('Deploying to production server...');
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      addLog('Deployment successful! ✅');
-      
-      // Set success state
-      setBuildStatus('success');
-      setDeploymentUrl('https://your-project-12345.projectify-app.com');
-      
-      toast({
-        title: 'Deployment Successful',
-        description: 'Your project has been deployed successfully',
-      });
-    } else {
-      addLog('Error during build process ❌');
-      addLog('Error: Module not found: Error: Can\'t resolve \'./missing-module\'');
-      
-      // Set error state
-      setBuildStatus('error');
-      
-      toast({
-        title: 'Deployment Failed',
-        description: 'There was an error during the build process',
-        variant: 'destructive'
-      });
-    }
-    
-    setUploading(false);
   };
 
   const handleSubmit = async (e) => {
@@ -117,14 +55,11 @@ const ProjectDeployment = () => {
       return;
     }
     
-    await simulateDeployment();
+    await uploadAndDeploy(files);
   };
 
   const handleReset = () => {
     setFiles([]);
-    setBuildLogs([]);
-    setBuildStatus('');
-    setDeploymentUrl('');
   };
 
   return (

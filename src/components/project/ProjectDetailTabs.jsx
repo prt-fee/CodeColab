@@ -1,13 +1,13 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import CodeEditorPanel from '@/components/project/CodeEditorPanel';
-import TasksPanel from '@/components/project/TasksPanel';
-import MeetingsPanel from '@/components/project/MeetingsPanel';
-import StatsPanel from '@/components/project/StatsPanel';
-import TeamPanel from '@/components/project/TeamPanel';
-import VersionControlPanel from '@/components/project/VersionControlPanel';
-import CollaborationPanel from '@/components/project/CollaborationPanel';
+import CodeEditorPanel from './CodeEditorPanel';
+import TasksPanel from './TasksPanel';
+import MeetingsPanel from './MeetingsPanel';
+import VersionControlPanel from './VersionControlPanel';
+import CollaborationPanel from './CollaborationPanel';
+import StatsPanel from './StatsPanel';
+import TeamPanel from './TeamPanel';
 
 const ProjectDetailTabs = ({
   project,
@@ -19,76 +19,73 @@ const ProjectDetailTabs = ({
   onCommitClick,
   onAddTaskClick,
   onAddMeetingClick,
+  onDeleteMeeting,
   onAddCollaborator,
   onRemoveCollaborator
 }) => {
+  const [activeTab, setActiveTab] = useState('files');
+
   return (
-    <Tabs defaultValue="code" className="w-full">
-      <TabsList className="mb-6">
-        <TabsTrigger value="code">Code</TabsTrigger>
-        <TabsTrigger value="collaboration">Collaboration</TabsTrigger>
+    <Tabs defaultValue="files" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+      <TabsList className="grid grid-cols-2 md:grid-cols-7 lg:grid-cols-7">
+        <TabsTrigger value="files">Files</TabsTrigger>
         <TabsTrigger value="tasks">Tasks</TabsTrigger>
+        <TabsTrigger value="versioning">Commits</TabsTrigger>
         <TabsTrigger value="meetings">Meetings</TabsTrigger>
-        <TabsTrigger value="stats">Statistics</TabsTrigger>
+        <TabsTrigger value="collaboration">Collaboration</TabsTrigger>
         <TabsTrigger value="team">Team</TabsTrigger>
-        <TabsTrigger value="commits">Commits</TabsTrigger>
+        <TabsTrigger value="stats">Stats</TabsTrigger>
       </TabsList>
       
-      <TabsContent value="code">
+      <TabsContent value="files" className="space-y-4">
         <CodeEditorPanel 
-          files={project.files || []}
+          project={project} 
           selectedFile={selectedFile}
           setSelectedFile={setSelectedFile}
           onSaveFile={onSaveFile}
           onNewFileClick={onNewFileClick}
-          onCommitClick={onCommitClick}
-          collaborators={project.collaborators || []}
         />
       </TabsContent>
       
-      <TabsContent value="collaboration">
+      <TabsContent value="tasks" className="space-y-4">
+        <TasksPanel 
+          tasks={projectTasks} 
+          onAddTaskClick={onAddTaskClick}
+        />
+      </TabsContent>
+      
+      <TabsContent value="versioning" className="space-y-4">
+        <VersionControlPanel 
+          commits={project?.commits || []} 
+          onCommitClick={onCommitClick}
+        />
+      </TabsContent>
+      
+      <TabsContent value="meetings" className="space-y-4">
+        <MeetingsPanel 
+          meetings={project?.meetings || []} 
+          onAddMeetingClick={onAddMeetingClick}
+          onDeleteMeeting={onDeleteMeeting}
+        />
+      </TabsContent>
+      
+      <TabsContent value="collaboration" className="space-y-4">
         <CollaborationPanel 
-          project={project}
-          collaborators={project.collaborators || []}
+          project={project} 
+        />
+      </TabsContent>
+      
+      <TabsContent value="team" className="space-y-4">
+        <TeamPanel 
+          members={project?.members || []} 
+          collaborators={project?.collaborators || []}
           onAddCollaborator={onAddCollaborator}
           onRemoveCollaborator={onRemoveCollaborator}
         />
       </TabsContent>
       
-      <TabsContent value="tasks">
-        <TasksPanel 
-          tasks={projectTasks}
-          onAddTaskClick={onAddTaskClick} 
-        />
-      </TabsContent>
-      
-      <TabsContent value="meetings">
-        <MeetingsPanel 
-          meetings={project.meetings || []}
-          onAddMeetingClick={onAddMeetingClick}
-        />
-      </TabsContent>
-
-      <TabsContent value="stats">
-        <StatsPanel 
-          project={project} 
-          projectTasks={projectTasks} 
-        />
-      </TabsContent>
-      
-      <TabsContent value="team">
-        <TeamPanel 
-          members={project.members || []} 
-          onAddCollaborator={onAddCollaborator}
-        />
-      </TabsContent>
-
-      <TabsContent value="commits">
-        <VersionControlPanel 
-          activeTab="commits"
-          commits={project.commits || []}
-          onNewCommitClick={onCommitClick}
-        />
+      <TabsContent value="stats" className="space-y-4">
+        <StatsPanel project={project} />
       </TabsContent>
     </Tabs>
   );

@@ -1,12 +1,10 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useNotifications } from '@/context/NotificationsContext';
 import { toast } from '@/hooks/use-toast';
 
 const useProjectMeetings = (project, saveProjectChanges) => {
   const { user } = useAuth();
-  const { addNotification } = useNotifications();
   const [newMeetingDialogOpen, setNewMeetingDialogOpen] = useState(false);
   const [newMeeting, setNewMeeting] = useState({
     title: '',
@@ -34,7 +32,7 @@ const useProjectMeetings = (project, saveProjectChanges) => {
       id: Date.now().toString(),
       title: newMeeting.title,
       date: dateTime,
-      duration: parseInt(newMeeting.duration),
+      duration: parseInt(newMeeting.duration) || 30,
       attendees: memberNames.length > 0 ? memberNames : ['You']
     };
     
@@ -71,22 +69,34 @@ const useProjectMeetings = (project, saveProjectChanges) => {
       title: "Meeting scheduled",
       description: `New meeting has been added to the calendar`,
     });
+  };
+  
+  const handleDeleteMeeting = (meetingId) => {
+    if (!project || !project.meetings) return;
     
-    // Notify team members
-    if (project.collaborators && project.collaborators.length > 0) {
-      project.collaborators.forEach(collab => {
-        addNotification({
-          type: 'meeting',
-          message: `New meeting for ${project.title}: "${newMeetingData.title}"`,
-          sender: {
-            id: user?.id || 'currentUser',
-            name: user?.name || 'Current User',
-            avatar: user?.avatar || ''
-          },
-          relatedProject: project.id
-        });
-      });
-    }
+    const updatedMeetings = project.meetings.filter(meeting => meeting.id !== meetingId);
+    
+    // Create activity record for deletion
+    const newActivity = {
+      id: Date.now().toString(),
+      type: 'meeting_delete',
+      user: user?.name || 'You',
+      timestamp: new Date().toISOString(),
+      message: `${user?.name || 'You'} deleted a meeting`
+    };
+    
+    const updatedProject = {
+      ...project,
+      meetings: updatedMeetings,
+      collaborationActivity: [newActivity, ...(project.collaborationActivity || [])]
+    };
+    
+    saveProjectChanges(updatedProject);
+    
+    toast({
+      title: "Meeting deleted",
+      description: "The meeting has been removed from the calendar"
+    });
   };
 
   return {
@@ -94,7 +104,8 @@ const useProjectMeetings = (project, saveProjectChanges) => {
     setNewMeetingDialogOpen,
     newMeeting,
     setNewMeeting,
-    handleAddMeeting
+    handleAddMeeting,
+    handleDeleteMeeting
   };
 };
 
