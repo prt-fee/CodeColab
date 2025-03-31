@@ -1,183 +1,214 @@
 
 import { toast } from "@/hooks/use-toast";
-import { firebaseAuth, firestore, firebaseStorage } from "./firebase";
+
+const API_URL = process.env.NODE_ENV === 'production' 
+  ? '/api' 
+  : 'http://localhost:5000/api';
 
 // Helper to handle API responses
-const handleResponse = async (promise) => {
-  try {
-    const data = await promise;
-    return data;
-  } catch (error) {
-    const errorMessage = error.message || "An error occurred";
+const handleResponse = async (response) => {
+  const data = await response.json();
+  
+  if (!response.ok) {
+    const error = data.message || response.statusText;
     toast({
       title: "Error",
-      description: errorMessage,
+      description: error,
       variant: "destructive"
     });
-    throw error;
+    throw new Error(error);
   }
+  
+  return data;
 };
 
 // Authentication API calls
 export const authAPI = {
   login: async (credentials) => {
-    return handleResponse(
-      firebaseAuth.login(credentials.email, credentials.password)
-    );
+    const response = await fetch(`${API_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(credentials)
+    });
+    return handleResponse(response);
   },
   
   register: async (userData) => {
-    return handleResponse(
-      firebaseAuth.register(userData.name, userData.email, userData.password)
-    );
+    const response = await fetch(`${API_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(userData)
+    });
+    return handleResponse(response);
   },
   
   logout: async () => {
-    return handleResponse(firebaseAuth.logout());
+    const response = await fetch(`${API_URL}/auth/logout`, {
+      method: 'POST',
+      credentials: 'include'
+    });
+    return handleResponse(response);
   },
   
-  getCurrentUser: () => {
-    return firebaseAuth.getCurrentUser();
+  getCurrentUser: async () => {
+    const response = await fetch(`${API_URL}/auth/me`, {
+      credentials: 'include'
+    });
+    return handleResponse(response);
   }
 };
 
 // Project API calls
 export const projectAPI = {
   getProjects: async () => {
-    const user = firebaseAuth.getCurrentUser();
-    if (!user) throw new Error("User not authenticated");
-    
-    return handleResponse(
-      firestore.projects.getAll(user.uid)
-    );
+    const response = await fetch(`${API_URL}/projects`, {
+      credentials: 'include'
+    });
+    return handleResponse(response);
   },
   
   getProject: async (id) => {
-    return handleResponse(
-      firestore.projects.getById(id)
-    );
+    const response = await fetch(`${API_URL}/projects/${id}`, {
+      credentials: 'include'
+    });
+    return handleResponse(response);
   },
   
   createProject: async (projectData) => {
-    const user = firebaseAuth.getCurrentUser();
-    if (!user) throw new Error("User not authenticated");
-    
-    return handleResponse(
-      firestore.projects.create({
-        ...projectData,
-        userId: user.uid
-      })
-    );
+    const response = await fetch(`${API_URL}/projects`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(projectData)
+    });
+    return handleResponse(response);
   },
   
   updateProject: async (id, projectData) => {
-    return handleResponse(
-      firestore.projects.update(id, projectData)
-    );
+    const response = await fetch(`${API_URL}/projects/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(projectData)
+    });
+    return handleResponse(response);
   },
   
   deleteProject: async (id) => {
-    return handleResponse(
-      firestore.projects.delete(id)
-    );
+    const response = await fetch(`${API_URL}/projects/${id}`, {
+      method: 'DELETE',
+      credentials: 'include'
+    });
+    return handleResponse(response);
   }
 };
 
 // Task API calls
 export const taskAPI = {
   getTasks: async (projectId) => {
-    return handleResponse(
-      firestore.tasks.getAll(projectId)
-    );
+    const url = projectId 
+      ? `${API_URL}/tasks?projectId=${projectId}` 
+      : `${API_URL}/tasks`;
+    
+    const response = await fetch(url, {
+      credentials: 'include'
+    });
+    return handleResponse(response);
   },
   
   getTask: async (id) => {
-    // Implement when needed
-    throw new Error("Not implemented");
+    const response = await fetch(`${API_URL}/tasks/${id}`, {
+      credentials: 'include'
+    });
+    return handleResponse(response);
   },
   
   createTask: async (taskData) => {
-    const user = firebaseAuth.getCurrentUser();
-    if (!user) throw new Error("User not authenticated");
-    
-    return handleResponse(
-      firestore.tasks.create({
-        ...taskData,
-        userId: user.uid
-      })
-    );
+    const response = await fetch(`${API_URL}/tasks`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(taskData)
+    });
+    return handleResponse(response);
   },
   
   updateTask: async (id, taskData) => {
-    return handleResponse(
-      firestore.tasks.update(id, taskData)
-    );
+    const response = await fetch(`${API_URL}/tasks/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(taskData)
+    });
+    return handleResponse(response);
   },
   
   deleteTask: async (id) => {
-    return handleResponse(
-      firestore.tasks.delete(id)
-    );
+    const response = await fetch(`${API_URL}/tasks/${id}`, {
+      method: 'DELETE',
+      credentials: 'include'
+    });
+    return handleResponse(response);
   }
 };
 
 // User API calls
 export const userAPI = {
   getUsers: async () => {
-    // Implement when needed - for now return empty array
-    return [];
+    const response = await fetch(`${API_URL}/users`, {
+      credentials: 'include'
+    });
+    return handleResponse(response);
   },
   
   getUser: async (id) => {
-    // Implement when needed
-    throw new Error("Not implemented");
+    const response = await fetch(`${API_URL}/users/${id}`, {
+      credentials: 'include'
+    });
+    return handleResponse(response);
   }
 };
 
-// Meeting API calls
+// Meeting API calls (to be implemented)
 export const meetingAPI = {
   getMeetings: async (projectId) => {
-    return handleResponse(
-      firestore.meetings.getAll(projectId)
-    );
+    const url = projectId 
+      ? `${API_URL}/meetings?projectId=${projectId}` 
+      : `${API_URL}/meetings`;
+    
+    const response = await fetch(url, {
+      credentials: 'include'
+    });
+    return handleResponse(response);
   },
   
   createMeeting: async (meetingData) => {
-    const user = firebaseAuth.getCurrentUser();
-    if (!user) throw new Error("User not authenticated");
-    
-    return handleResponse(
-      firestore.meetings.create({
-        ...meetingData,
-        userId: user.uid
-      })
-    );
+    const response = await fetch(`${API_URL}/meetings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(meetingData)
+    });
+    return handleResponse(response);
   },
   
-  updateMeeting: async (meetingId, meetingData) => {
-    return handleResponse(
-      firestore.meetings.update(meetingId, meetingData)
-    );
+  updateMeeting: async (id, meetingData) => {
+    const response = await fetch(`${API_URL}/meetings/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(meetingData)
+    });
+    return handleResponse(response);
   },
   
-  deleteMeeting: async (meetingId) => {
-    return handleResponse(
-      firestore.meetings.delete(meetingId)
-    );
-  }
-};
-
-// File storage API
-export const storageAPI = {
-  uploadFile: async (file, path) => {
-    return handleResponse(
-      firebaseStorage.uploadFile(file, path)
-    );
-  },
-  
-  getFileUrl: async (path) => {
-    return handleResponse(
-      firebaseStorage.getFileUrl(path)
-    );
+  deleteMeeting: async (id) => {
+    const response = await fetch(`${API_URL}/meetings/${id}`, {
+      method: 'DELETE',
+      credentials: 'include'
+    });
+    return handleResponse(response);
   }
 };

@@ -3,8 +3,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 import { projectAPI } from '@/services/api';
-import { useAuth } from '@/context/AuthContext';
-import { firestore } from '@/services/firebase';
 
 // Import mock projects as fallback
 const mockProjects = [
@@ -48,51 +46,40 @@ const mockProjects = [
 
 const useDashboard = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [projects, setProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Load projects from Firestore
+  // Load projects from API or localStorage
   useEffect(() => {
     const fetchProjects = async () => {
-      if (!user) return;
-      
       setIsLoading(true);
       try {
-        // Try to fetch from Firestore
-        const projectsData = await projectAPI.getProjects();
+        // Try to fetch from API first (will work when backend is connected)
+        const data = await projectAPI.getProjects().catch(() => null);
         
-        if (projectsData && Array.isArray(projectsData) && projectsData.length > 0) {
-          // Format dates correctly
-          const formattedProjects = projectsData.map(project => ({
-            ...project,
-            dueDate: project.dueDate ? new Date(project.dueDate) : null
-          }));
-          setProjects(formattedProjects);
+        if (data && Array.isArray(data)) {
+          setProjects(data);
+          // Also save to localStorage as backup
+          localStorage.setItem('user_projects', JSON.stringify(data));
         } else {
-          // If no projects in Firestore, create mock projects there
-          console.log("No projects found, initializing with mock data");
+          // If API fails, try localStorage
+          const savedProjects = localStorage.getItem('user_projects');
           
-          const createdProjects = [];
-          for (const mockProject of mockProjects) {
+          if (savedProjects) {
             try {
-              const newProject = await projectAPI.createProject({
-                title: mockProject.title,
-                description: mockProject.description,
-                color: mockProject.color,
-                dueDate: mockProject.dueDate,
-                members: mockProject.members,
-                tasksCount: mockProject.tasksCount
-              });
-              createdProjects.push(newProject);
-            } catch (err) {
-              console.error("Failed to create mock project:", err);
+              const parsedProjects = JSON.parse(savedProjects);
+              // Ensure the data is in the expected format
+              if (Array.isArray(parsedProjects)) {
+                setProjects(parsedProjects);
+              } else {
+                console.warn('Saved projects is not an array, using mock data');
+                setProjects(mockProjects);
+              }
+            } catch (e) {
+              console.error('Failed to parse saved projects', e);
+              setProjects(mockProjects);
             }
-          }
-          
-          if (createdProjects.length > 0) {
-            setProjects(createdProjects);
           } else {
             setProjects(mockProjects);
           }
@@ -101,69 +88,47 @@ const useDashboard = () => {
         console.error('Error fetching projects:', err);
         setError('Failed to load projects');
         setProjects(mockProjects);
-        
-        toast({
-          title: "Error Loading Projects",
-          description: "Using mock data instead. " + err.message,
-          variant: "destructive"
-        });
       } finally {
         setIsLoading(false);
       }
     };
     
     fetchProjects();
-  }, [user]);
+  }, []);
+
+  // Save projects to localStorage when they change
+  useEffect(() => {
+    if (projects.length > 0 && !isLoading) {
+      localStorage.setItem('user_projects', JSON.stringify(projects));
+    }
+  }, [projects, isLoading]);
 
   const handleProjectClick = (projectId) => {
     navigate(`/projects/${projectId}`);
   };
 
-  const createProject = async (newProject) => {
-    if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "You need to be logged in to create projects",
-        variant: "destructive"
-      });
-      return null;
-    }
-    
-    try {
-      // Add project to Firestore
-      const projectToAdd = {
-        title: newProject.title || newProject.name,
-        description: newProject.description,
-        color: newProject.color || 'blue',
-        dueDate: newProject.dueDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        members: newProject.members || [],
-        files: [],
-        commits: [],
-        meetings: [],
-        collaborators: [],
-        tasksCount: { total: 0, completed: 0 }
-      };
+  const createProject = (newProject) => {
+    // Add unique ID and default values
+    const projectToAdd = {
+      id: Math.random().toString(36).substr(2, 9),
+      ...newProject,
+      createdAt: new Date().toISOString(),
+      members: newProject.members || [],
+      files: [],
+      commits: [],
+      meetings: [],
+      collaborators: [],
+      tasksCount: { total: 0, completed: 0 }
+    };
 
-      const createdProject = await projectAPI.createProject(projectToAdd);
-      
-      // Update local state
-      setProjects(prev => [createdProject, ...prev]);
-      
-      toast({
-        title: "Project created",
-        description: `${newProject.title || newProject.name} has been created successfully`,
-      });
-      
-      return createdProject;
-    } catch (error) {
-      console.error("Error creating project:", error);
-      toast({
-        title: "Failed to Create Project",
-        description: error.message || "An error occurred",
-        variant: "destructive"
-      });
-      return null;
-    }
+    setProjects(prev => [projectToAdd, ...prev]);
+    
+    toast({
+      title: "Project created",
+      description: `${newProject.title} has been created successfully`,
+    });
+    
+    return projectToAdd;
   };
 
   return {

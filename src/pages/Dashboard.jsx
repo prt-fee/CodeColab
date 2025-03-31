@@ -6,7 +6,6 @@ import NavBar from '@/components/NavBar';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardContent from '@/components/dashboard/DashboardContent';
 import { Loader2 } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
 
 const Dashboard = () => {
   const { user, loading, isAuthenticated } = useAuth();
@@ -15,11 +14,6 @@ const Dashboard = () => {
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!loading && !isAuthenticated) {
-      toast({
-        title: "Authentication Required",
-        description: "Please log in to access the dashboard",
-        variant: "destructive"
-      });
       navigate('/login');
     }
   }, [isAuthenticated, loading, navigate]);
