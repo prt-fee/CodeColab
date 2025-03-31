@@ -62,10 +62,14 @@ const useProjects = () => {
           } else {
             console.warn('Saved projects is not an array, using mock data');
             setProjects(mockProjects);
+            // Initialize localStorage with mock data
+            localStorage.setItem('user_projects', JSON.stringify(mockProjects));
           }
         } catch (e) {
           console.error('Failed to parse saved projects', e);
           setProjects(mockProjects);
+          // Initialize localStorage with mock data
+          localStorage.setItem('user_projects', JSON.stringify(mockProjects));
         }
       } else {
         setProjects(mockProjects);
@@ -87,6 +91,7 @@ const useProjects = () => {
       });
       return;
     }
+    
     // Use the navigate function to properly navigate to the project detail page
     navigate(`/projects/${projectId}`);
   };

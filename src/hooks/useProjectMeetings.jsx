@@ -44,14 +44,18 @@ const useProjectMeetings = (project, saveProjectChanges) => {
       return;
     }
     
+    // Generate default attendees if none provided
     const memberNames = project.members?.slice(0, 2).map(member => member.name) || [];
+    const attendeesList = newMeeting.attendees.length > 0 ? 
+      newMeeting.attendees : 
+      (memberNames.length > 0 ? memberNames : ['You']);
     
     const newMeetingData = {
       id: Date.now().toString(),
       title: newMeeting.title,
       date: dateTime,
       duration: parseInt(newMeeting.duration) || 30,
-      attendees: memberNames.length > 0 ? memberNames : ['You']
+      attendees: attendeesList
     };
     
     // Create activity record

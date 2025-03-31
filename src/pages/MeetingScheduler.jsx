@@ -9,13 +9,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Calendar, Clock, Users, Video, Calendar as CalendarIcon, Plus, Link as LinkIcon, Copy } from 'lucide-react';
+import { Calendar, Clock, Users, Video, Calendar as CalendarIcon, Plus, Link as LinkIcon, Copy, Trash2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import useProjects from '@/hooks/useProjects';
 import { useTaskManager } from '@/hooks/useTaskManager';
 
-const MeetingCard = ({ meeting, onCopyLink }) => {
+const MeetingCard = ({ meeting, onCopyLink, onDelete }) => {
   const formatDate = (date) => {
     if (!date) return '';
     return new Intl.DateTimeFormat('en-US', {
@@ -53,15 +53,25 @@ const MeetingCard = ({ meeting, onCopyLink }) => {
       <CardContent className="p-4">
         <div className="flex justify-between items-start mb-2">
           <h3 className="font-medium">{meeting.title}</h3>
-          {isLive(meeting.date, meeting.duration) && (
-            <Badge className="bg-red-500">LIVE</Badge>
-          )}
-          {isMeetingSoon(meeting.date) && !isLive(meeting.date, meeting.duration) && (
-            <Badge className="bg-yellow-500">Soon</Badge>
-          )}
-          {isPast(meeting.date) && (
-            <Badge variant="outline">Past</Badge>
-          )}
+          <div className="flex gap-2">
+            {isLive(meeting.date, meeting.duration) && (
+              <Badge className="bg-red-500">LIVE</Badge>
+            )}
+            {isMeetingSoon(meeting.date) && !isLive(meeting.date, meeting.duration) && (
+              <Badge className="bg-yellow-500">Soon</Badge>
+            )}
+            {isPast(meeting.date) && (
+              <Badge variant="outline">Past</Badge>
+            )}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-6 w-6 p-0"
+              onClick={() => onDelete && onDelete(meeting.id)}
+            >
+              <Trash2 className="h-3 w-3 text-destructive" />
+            </Button>
+          </div>
         </div>
         
         <div className="text-sm text-muted-foreground space-y-2 mb-3">
@@ -156,76 +166,56 @@ const MeetingScheduler = () => {
       try {
         const parsedMeetings = JSON.parse(savedMeetings);
         if (Array.isArray(parsedMeetings)) {
-          setMeetings(parsedMeetings);
+          // Convert string dates to Date objects
+          const formattedMeetings = parsedMeetings.map(meeting => ({
+            ...meeting,
+            date: new Date(meeting.date)
+          }));
+          setMeetings(formattedMeetings);
         }
       } catch (e) {
         console.error('Failed to parse saved meetings:', e);
-        // Initialize with some mock meetings
-        const mockMeetings = [
-          {
-            id: '1',
-            title: 'Project Kickoff',
-            date: new Date(Date.now() + 2 * 60 * 60 * 1000),
-            duration: 60,
-            attendees: ['John Doe', 'Jane Smith', 'Mike Johnson'],
-            meetLink: 'https://meet.google.com/abc-defg-hij',
-            projectId: '1'
-          },
-          {
-            id: '2',
-            title: 'Sprint Planning',
-            date: new Date(Date.now() + 24 * 60 * 60 * 1000),
-            duration: 45,
-            attendees: ['John Doe', 'Sarah Williams'],
-            meetLink: 'https://meet.google.com/xyz-abcd-efg',
-            projectId: '2'
-          },
-          {
-            id: '3',
-            title: 'Design Review',
-            date: new Date(Date.now() - 2 * 60 * 60 * 1000),
-            duration: 30,
-            attendees: ['John Doe', 'Jane Smith', 'Mike Johnson', 'Sarah Williams'],
-            meetLink: 'https://meet.google.com/123-456-789',
-            projectId: '1'
-          }
-        ];
-        setMeetings(mockMeetings);
+        initializeMockMeetings();
       }
     } else {
-      // Initialize with some mock meetings
-      const mockMeetings = [
-        {
-          id: '1',
-          title: 'Project Kickoff',
-          date: new Date(Date.now() + 2 * 60 * 60 * 1000),
-          duration: 60,
-          attendees: ['John Doe', 'Jane Smith', 'Mike Johnson'],
-          meetLink: 'https://meet.google.com/abc-defg-hij',
-          projectId: '1'
-        },
-        {
-          id: '2',
-          title: 'Sprint Planning',
-          date: new Date(Date.now() + 24 * 60 * 60 * 1000),
-          duration: 45,
-          attendees: ['John Doe', 'Sarah Williams'],
-          meetLink: 'https://meet.google.com/xyz-abcd-efg',
-          projectId: '2'
-        },
-        {
-          id: '3',
-          title: 'Design Review',
-          date: new Date(Date.now() - 2 * 60 * 60 * 1000),
-          duration: 30,
-          attendees: ['John Doe', 'Jane Smith', 'Mike Johnson', 'Sarah Williams'],
-          meetLink: 'https://meet.google.com/123-456-789',
-          projectId: '1'
-        }
-      ];
-      setMeetings(mockMeetings);
+      initializeMockMeetings();
     }
   }, []);
+  
+  const initializeMockMeetings = () => {
+    // Initialize with some mock meetings
+    const mockMeetings = [
+      {
+        id: '1',
+        title: 'Project Kickoff',
+        date: new Date(Date.now() + 2 * 60 * 60 * 1000),
+        duration: 60,
+        attendees: ['John Doe', 'Jane Smith', 'Mike Johnson'],
+        meetLink: 'https://meet.google.com/abc-defg-hij',
+        projectId: '1'
+      },
+      {
+        id: '2',
+        title: 'Sprint Planning',
+        date: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        duration: 45,
+        attendees: ['John Doe', 'Sarah Williams'],
+        meetLink: 'https://meet.google.com/xyz-abcd-efg',
+        projectId: '2'
+      },
+      {
+        id: '3',
+        title: 'Design Review',
+        date: new Date(Date.now() - 2 * 60 * 60 * 1000),
+        duration: 30,
+        attendees: ['John Doe', 'Jane Smith', 'Mike Johnson', 'Sarah Williams'],
+        meetLink: 'https://meet.google.com/123-456-789',
+        projectId: '1'
+      }
+    ];
+    setMeetings(mockMeetings);
+    localStorage.setItem('user_meetings', JSON.stringify(mockMeetings));
+  };
   
   const handleAddMeeting = () => {
     if (!newMeeting.title) {
@@ -239,16 +229,29 @@ const MeetingScheduler = () => {
     
     const dateTime = new Date(`${newMeeting.date}T${newMeeting.time}`);
     
+    if (isNaN(dateTime.getTime())) {
+      toast({
+        title: "Error",
+        description: "Invalid date or time",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     // Generate a mock Google Meet link
     const randomCode = Math.random().toString(36).substring(2, 11);
     const meetLink = `https://meet.google.com/${randomCode}`;
+    
+    const attendees = newMeeting.attendees.length > 0 
+      ? (typeof newMeeting.attendees === 'string' ? newMeeting.attendees.split(',').map(a => a.trim()) : newMeeting.attendees)
+      : ['You'];
     
     const meeting = {
       id: Date.now().toString(),
       title: newMeeting.title,
       date: dateTime,
       duration: parseInt(newMeeting.duration),
-      attendees: newMeeting.attendees.length > 0 ? newMeeting.attendees : ['You'],
+      attendees: attendees,
       projectId: newMeeting.projectId,
       taskId: newMeeting.taskId,
       description: newMeeting.description,
@@ -285,6 +288,19 @@ const MeetingScheduler = () => {
     toast({
       title: "Link copied",
       description: "Meeting link copied to clipboard",
+    });
+  };
+  
+  const handleDeleteMeeting = (meetingId) => {
+    const updatedMeetings = meetings.filter(meeting => meeting.id !== meetingId);
+    setMeetings(updatedMeetings);
+    
+    // Save to localStorage
+    localStorage.setItem('user_meetings', JSON.stringify(updatedMeetings));
+    
+    toast({
+      title: "Meeting deleted",
+      description: "Meeting has been removed from the calendar",
     });
   };
   
@@ -351,6 +367,7 @@ const MeetingScheduler = () => {
                           key={meeting.id} 
                           meeting={meeting}
                           onCopyLink={handleCopyLink}
+                          onDelete={handleDeleteMeeting}
                         />
                       ))
                     )}
@@ -386,6 +403,7 @@ const MeetingScheduler = () => {
                           key={meeting.id} 
                           meeting={meeting}
                           onCopyLink={handleCopyLink}
+                          onDelete={handleDeleteMeeting}
                         />
                       ))
                     )}
@@ -413,6 +431,7 @@ const MeetingScheduler = () => {
                           key={meeting.id} 
                           meeting={meeting}
                           onCopyLink={handleCopyLink}
+                          onDelete={handleDeleteMeeting}
                         />
                       ))
                     )}
@@ -476,7 +495,10 @@ const MeetingScheduler = () => {
               <CardDescription>Create a new meeting with Google Meet integration</CardDescription>
             </CardHeader>
             <CardContent>
-              <form className="space-y-4">
+              <form className="space-y-4" onSubmit={(e) => {
+                e.preventDefault();
+                handleAddMeeting();
+              }}>
                 <div className="space-y-2">
                   <Label htmlFor="title">Meeting Title</Label>
                   <Input
@@ -484,6 +506,7 @@ const MeetingScheduler = () => {
                     value={newMeeting.title}
                     onChange={(e) => setNewMeeting({...newMeeting, title: e.target.value})}
                     placeholder="Enter meeting title"
+                    required
                   />
                 </div>
                 
@@ -495,6 +518,7 @@ const MeetingScheduler = () => {
                       type="date"
                       value={newMeeting.date}
                       onChange={(e) => setNewMeeting({...newMeeting, date: e.target.value})}
+                      required
                     />
                   </div>
                   <div className="space-y-2">
@@ -504,6 +528,7 @@ const MeetingScheduler = () => {
                       type="time"
                       value={newMeeting.time}
                       onChange={(e) => setNewMeeting({...newMeeting, time: e.target.value})}
+                      required
                     />
                   </div>
                 </div>
@@ -533,7 +558,7 @@ const MeetingScheduler = () => {
                   <Input
                     id="attendees"
                     placeholder="Enter names separated by commas"
-                    value={newMeeting.attendees.join(', ')}
+                    value={typeof newMeeting.attendees === 'string' ? newMeeting.attendees : newMeeting.attendees.join(', ')}
                     onChange={(e) => setNewMeeting({
                       ...newMeeting, 
                       attendees: e.target.value.split(',').map(name => name.trim()).filter(Boolean)
@@ -569,7 +594,7 @@ const MeetingScheduler = () => {
                   >
                     Cancel
                   </Button>
-                  <Button type="button" onClick={handleAddMeeting}>
+                  <Button type="submit">
                     <LinkIcon className="h-4 w-4 mr-2" />
                     Schedule with Google Meet
                   </Button>

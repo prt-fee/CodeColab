@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Loader2, ArrowLeft, CalendarDays, Users, Search, UserPlus, Trash2 } from 'lucide-react';
 import ProjectDetailTabs from '@/components/project/ProjectDetailTabs';
 import { NewFileDialog, NewMeetingDialog, NewTaskDialog, NewCommitDialog } from '@/components/project/ProjectDialogs';
+import ProjectDetailDialogs from '@/components/project/ProjectDetailDialogs';
 import {
   Sheet,
   SheetContent,
