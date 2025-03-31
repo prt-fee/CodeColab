@@ -4,8 +4,15 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import ProjectCard from './ProjectCard';
+import { useNavigate } from 'react-router-dom';
 
-const ProjectsList = ({ projects, onCreateClick, onProjectClick }) => {
+const ProjectsList = ({ projects, onCreateClick }) => {
+  const navigate = useNavigate();
+  
+  const handleProjectClick = (projectId) => {
+    navigate(`/projects/${projectId}`);
+  };
+
   return (
     <div className="mb-12">
       <div className="flex items-center justify-between mb-6">
@@ -32,7 +39,7 @@ const ProjectsList = ({ projects, onCreateClick, onProjectClick }) => {
             <ProjectCard 
               key={project.id} 
               project={project} 
-              onClick={() => onProjectClick(project.id)}
+              onClick={() => handleProjectClick(project.id)}
             />
           ))}
         </div>

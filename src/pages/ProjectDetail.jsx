@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Loader2, ArrowLeft, CalendarDays, Users, Search, UserPlus, Trash2 } from 'lucide-react';
 import ProjectDetailTabs from '@/components/project/ProjectDetailTabs';
 import { NewFileDialog, NewMeetingDialog, NewTaskDialog, NewCommitDialog } from '@/components/project/ProjectDialogs';
-import ProjectDetailDialogs from '@/components/project/ProjectDetailDialogs';
 import {
   Sheet,
   SheetContent,
@@ -41,7 +40,7 @@ const MOCK_USERS = [
 const ProjectDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { addNotification } = useNotifications();
+  const { addNotification } = useNotifications || { addNotification: () => {} };
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [teamSheetOpen, setTeamSheetOpen] = useState(false);
@@ -125,16 +124,18 @@ const ProjectDetail = () => {
       description: `Invitation has been sent to ${user.name}`
     });
     
-    addNotification({
-      type: 'invitation',
-      message: `You've been invited to join the project "${project.title}"`,
-      sender: {
-        id: 'currentUser',
-        name: 'Current User',
-        avatar: ''
-      },
-      relatedProject: project.id
-    });
+    if (addNotification) {
+      addNotification({
+        type: 'invitation',
+        message: `You've been invited to join the project "${project.title}"`,
+        sender: {
+          id: 'currentUser',
+          name: 'Current User',
+          avatar: ''
+        },
+        relatedProject: project.id
+      });
+    }
     
     const newCollaborator = {
       id: Date.now().toString(),
@@ -174,6 +175,9 @@ const ProjectDetail = () => {
     }).format(new Date(date));
   };
 
+  // Ensure members is always an array
+  const members = Array.isArray(project.members) ? project.members : [];
+
   return (
     <div className="min-h-screen bg-background">
       <NavBar />
@@ -208,7 +212,7 @@ const ProjectDetail = () => {
                   <Users className="h-4 w-4" />
                   <span>Team</span>
                   <div className="flex -space-x-2">
-                    {project.members && project.members.slice(0, 3).map((member, index) => (
+                    {members.slice(0, 3).map((member, index) => (
                       <div 
                         key={member.id || index} 
                         className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center border-2 border-background text-[10px]"
@@ -216,9 +220,9 @@ const ProjectDetail = () => {
                         {member.name ? member.name.charAt(0) : `U${index}`}
                       </div>
                     ))}
-                    {project.members && project.members.length > 3 && (
+                    {members.length > 3 && (
                       <div className="flex items-center justify-center w-5 h-5 rounded-full bg-muted text-[10px] border-2 border-background">
-                        +{project.members.length - 3}
+                        +{members.length - 3}
                       </div>
                     )}
                   </div>
@@ -277,8 +281,8 @@ const ProjectDetail = () => {
                   <div>
                     <h3 className="text-sm font-medium mb-3">Team Members</h3>
                     <div className="space-y-2">
-                      {project.members && project.members.length > 0 ? (
-                        project.members.map((member, index) => (
+                      {members.length > 0 ? (
+                        members.map((member, index) => (
                           <div 
                             key={member.id || index}
                             className="p-2 bg-muted rounded-md flex items-center gap-2"
@@ -308,7 +312,7 @@ const ProjectDetail = () => {
         
         <ProjectDetailTabs
           project={project}
-          projectTasks={projectTasks}
+          projectTasks={projectTasks || []}
           selectedFile={selectedFile}
           setSelectedFile={setSelectedFile}
           onSaveFile={handleSaveFile}

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import NavBar from '@/components/NavBar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -160,13 +159,11 @@ const MeetingScheduler = () => {
   });
   
   useEffect(() => {
-    // Load meetings from localStorage
     const savedMeetings = localStorage.getItem('user_meetings');
     if (savedMeetings) {
       try {
         const parsedMeetings = JSON.parse(savedMeetings);
         if (Array.isArray(parsedMeetings)) {
-          // Convert string dates to Date objects
           const formattedMeetings = parsedMeetings.map(meeting => ({
             ...meeting,
             date: new Date(meeting.date)
@@ -183,7 +180,6 @@ const MeetingScheduler = () => {
   }, []);
   
   const initializeMockMeetings = () => {
-    // Initialize with some mock meetings
     const mockMeetings = [
       {
         id: '1',
@@ -238,7 +234,6 @@ const MeetingScheduler = () => {
       return;
     }
     
-    // Generate a mock Google Meet link
     const randomCode = Math.random().toString(36).substring(2, 11);
     const meetLink = `https://meet.google.com/${randomCode}`;
     
@@ -261,7 +256,6 @@ const MeetingScheduler = () => {
     const updatedMeetings = [...meetings, meeting];
     setMeetings(updatedMeetings);
     
-    // Save to localStorage
     localStorage.setItem('user_meetings', JSON.stringify(updatedMeetings));
     
     setNewMeeting({
@@ -295,7 +289,6 @@ const MeetingScheduler = () => {
     const updatedMeetings = meetings.filter(meeting => meeting.id !== meetingId);
     setMeetings(updatedMeetings);
     
-    // Save to localStorage
     localStorage.setItem('user_meetings', JSON.stringify(updatedMeetings));
     
     toast({
@@ -576,7 +569,7 @@ const MeetingScheduler = () => {
                       <SelectValue placeholder="Select project" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
                       {projects.map(project => (
                         <SelectItem key={project.id} value={project.id}>
                           {project.title}

@@ -45,7 +45,9 @@ const useProjectMeetings = (project, saveProjectChanges) => {
     }
     
     // Generate default attendees if none provided
-    const memberNames = project.members?.slice(0, 2).map(member => member.name) || [];
+    const memberNames = project.members && Array.isArray(project.members) ? 
+      project.members.slice(0, 2).map(member => member.name) : [];
+    
     const attendeesList = newMeeting.attendees.length > 0 ? 
       newMeeting.attendees : 
       (memberNames.length > 0 ? memberNames : ['You']);
@@ -68,11 +70,14 @@ const useProjectMeetings = (project, saveProjectChanges) => {
       message: `${user?.name || 'You'} scheduled "${newMeeting.title}" meeting`
     };
     
-    const updatedMeetings = [...(project.meetings || []), newMeetingData];
+    const updatedMeetings = Array.isArray(project.meetings) ? [...project.meetings, newMeetingData] : [newMeetingData];
+    const updatedActivity = Array.isArray(project.collaborationActivity) ? 
+      [newActivity, ...project.collaborationActivity] : [newActivity];
+    
     const updatedProject = {
       ...project,
       meetings: updatedMeetings,
-      collaborationActivity: [newActivity, ...(project.collaborationActivity || [])]
+      collaborationActivity: updatedActivity
     };
     
     saveProjectChanges(updatedProject);
@@ -125,10 +130,13 @@ const useProjectMeetings = (project, saveProjectChanges) => {
       message: `${user?.name || 'You'} deleted "${meetingToDelete.title}" meeting`
     };
     
+    const updatedActivity = Array.isArray(project.collaborationActivity) ? 
+      [newActivity, ...project.collaborationActivity] : [newActivity];
+    
     const updatedProject = {
       ...project,
       meetings: updatedMeetings,
-      collaborationActivity: [newActivity, ...(project.collaborationActivity || [])]
+      collaborationActivity: updatedActivity
     };
     
     saveProjectChanges(updatedProject);
