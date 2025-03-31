@@ -73,7 +73,7 @@ const Hero = () => {
               <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/30 to-accent rounded-2xl blur-lg opacity-30"></div>
               <div className="relative bg-white rounded-2xl overflow-hidden border shadow-xl">
                 <img 
-                  src="https://cdn.pixabay.com/photo/2020/12/31/12/28/canva-5876229_1280.png" 
+                  src="./PMD1.png" 
                   alt="Project Management Dashboard" 
                   className="w-full h-auto" 
                   loading="lazy"

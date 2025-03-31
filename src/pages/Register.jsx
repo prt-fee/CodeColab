@@ -67,7 +67,7 @@ const Register = () => {
           <div className="flex justify-center mb-4">
             <Link to="/" className="flex items-center gap-2">
               <span className="text-primary text-2xl">●</span>
-              <span className="text-xl font-semibold">Projectify</span>
+              <span className="text-xl font-semibold">ProjectHub</span>
             </Link>
           </div>
           <CardTitle className="text-2xl font-bold text-center">Create an account</CardTitle>

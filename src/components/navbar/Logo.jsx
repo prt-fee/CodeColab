@@ -7,7 +7,7 @@ const Logo = ({ isScrolled }) => {
     <Link to="/" className="flex items-center gap-2">
       <span className={`text-2xl ${isScrolled ? 'text-primary' : 'text-primary'}`}>●</span>
       <span className={`text-xl font-semibold ${isScrolled ? 'text-foreground' : 'text-foreground'}`}>
-        Projectify
+      ProjectHub
       </span>
     </Link>
   );

@@ -57,7 +57,7 @@ const AppLayout: React.FC = () => {
           {!collapsed && (
             <div className="flex items-center gap-2">
               <span className="text-primary text-xl">●</span>
-              <span className="font-semibold">Projectify</span>
+              <span className="font-semibold">ProjectHub</span>
             </div>
           )}
           <Button 

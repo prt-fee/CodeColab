@@ -57,7 +57,7 @@ const NavBar: React.FC = () => {
           className="text-xl font-semibold flex items-center gap-2 select-none"
         >
           <span className="text-primary text-2xl">●</span>
-          <span>Projectify</span>
+          <span>ProjectHub</span>
         </Link>
 
         {/* Desktop Navigation */}

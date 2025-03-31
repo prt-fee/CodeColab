@@ -6,14 +6,12 @@ import useProjectVersionControl from './useProjectVersionControl';
 import useProjectMeetings from './useProjectMeetings';
 import useProjectTasks from './useProjectTasks';
 import useProjectCollaboration from './useProjectCollaboration';
-import { toast } from '@/hooks/use-toast';
 
 const useProjectDetail = (projectId) => {
   const { 
     project, 
     isLoading, 
     saveProjectChanges,
-    deleteProject,
     handleGoBack 
   } = useProjectData(projectId);
 
@@ -43,8 +41,7 @@ const useProjectDetail = (projectId) => {
     setNewMeetingDialogOpen,
     newMeeting,
     setNewMeeting,
-    handleAddMeeting,
-    handleDeleteMeeting
+    handleAddMeeting
   } = useProjectMeetings(project, saveProjectChanges);
 
   const {
@@ -60,24 +57,6 @@ const useProjectDetail = (projectId) => {
     handleAddCollaborator,
     handleRemoveCollaborator
   } = useProjectCollaboration(project, saveProjectChanges);
-  
-  const handleDeleteProject = () => {
-    if (!project) {
-      toast({
-        title: "Error",
-        description: "Project data is not available",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    deleteProject(projectId);
-    
-    toast({
-      title: "Project deleted",
-      description: `"${project.title}" has been permanently deleted`,
-    });
-  };
 
   return {
     // Project data
@@ -109,7 +88,6 @@ const useProjectDetail = (projectId) => {
     newMeeting, 
     setNewMeeting,
     handleAddMeeting,
-    handleDeleteMeeting,
     
     // Tasks
     projectTasks,
@@ -122,9 +100,6 @@ const useProjectDetail = (projectId) => {
     // Collaboration
     handleAddCollaborator,
     handleRemoveCollaborator,
-    
-    // Project Management
-    handleDeleteProject,
     
     // Navigation
     handleGoBack

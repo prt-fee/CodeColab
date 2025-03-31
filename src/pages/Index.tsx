@@ -33,7 +33,7 @@ const Index = () => {
             Ready to transform your project management?
           </h2>
           <p className="text-primary-foreground/90 text-lg max-w-2xl mx-auto mb-8">
-            Join thousands of teams that use Projectify to collaborate more effectively and deliver projects on time.
+            Join thousands of teams that use ProjectHub to collaborate more effectively and deliver projects on time.
           </p>
           <button 
             onClick={() => navigate('/register')}

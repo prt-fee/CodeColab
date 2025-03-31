@@ -16,7 +16,6 @@ const ProjectDetailDialogs = ({
   newMeeting,
   setNewMeeting,
   onAddMeeting,
-  
   newTaskDialogOpen,
   setNewTaskDialogOpen,
   newTask,

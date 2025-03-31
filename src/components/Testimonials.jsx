@@ -4,7 +4,7 @@ import { staggerAnimation } from '@/lib/animations';
 
 const testimonials = [
   {
-    quote: "Projectify has completely transformed how our team works together. The interface is beautiful and intuitive.",
+    quote: "ProjectHub has completely transformed how our team works together. The interface is beautiful and intuitive.",
     author: "Sarah Johnson",
     role: "Product Manager at TechCorp",
     avatar: "https://randomuser.me/api/portraits/women/44.jpg"

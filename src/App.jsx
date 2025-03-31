@@ -32,6 +32,8 @@ function App() {
         <AuthProvider>
           <NotificationsProvider>
             <TooltipProvider>
+            <Toaster />
+            <Sonner />
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/dashboard" element={<Dashboard />} />
@@ -49,8 +51,8 @@ function App() {
                 <Route path="/features" element={<Features />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
-              <Toaster />
-              <Sonner />
+              {/* <Toaster />
+              <Sonner /> */}
             </TooltipProvider>
           </NotificationsProvider>
         </AuthProvider>

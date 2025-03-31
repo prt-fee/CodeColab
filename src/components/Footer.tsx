@@ -10,7 +10,7 @@ const Footer: React.FC = () => {
           <div className="md:col-span-1">
             <Link to="/" className="inline-flex items-center gap-2 mb-4">
               <span className="text-primary text-2xl">●</span>
-              <span className="text-xl font-semibold">Projectify</span>
+              <span className="text-xl font-semibold">ProjectHub</span>
             </Link>
             <p className="text-muted-foreground mb-4 text-sm">
               An elegant project management platform designed for modern teams.
@@ -124,7 +124,7 @@ const Footer: React.FC = () => {
         
         <div className="mt-12 pt-6 border-t border-border flex flex-col md:flex-row justify-between items-center">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Projectify. All rights reserved.
+            © {new Date().getFullYear()} ProjectHub. All rights reserved.
           </p>
           <div className="mt-4 md:mt-0 flex gap-4">
             <Link to="#" className="text-xs text-muted-foreground hover:text-primary transition-colors">

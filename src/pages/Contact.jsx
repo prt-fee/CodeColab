@@ -82,7 +82,7 @@ const Contact = () => {
               }
               title="Email Us"
               description="Our friendly team is here to help."
-              value="hello@projectify.com"
+              value="hello@ProjectHub.com"
             />
             <ContactCard 
               icon={

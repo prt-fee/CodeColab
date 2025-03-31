@@ -22,7 +22,7 @@ const About = () => {
             <div>
               <h2 className="text-2xl font-bold mb-4">Who We Are</h2>
               <p className="text-muted-foreground mb-4">
-                Projectify was founded in 2022 by a team of project managers and developers
+              ProjectHub was founded in 2025 by a team of project managers and developers
                 who were frustrated with the complexity and inefficiency of existing project
                 management tools.
               </p>
@@ -51,7 +51,7 @@ const About = () => {
                 </div>
               </div>
               <h3 className="font-bold text-xl mb-1">5,000+</h3>
-              <p className="text-muted-foreground text-sm">Teams using Projectify</p>
+              <p className="text-muted-foreground text-sm">Teams using ProjectHub</p>
             </div>
             <div className="bg-blue-50 p-6 rounded-lg">
               <div className="flex justify-center mb-4">
@@ -111,7 +111,7 @@ const About = () => {
           
           <div className="text-center">
             <Button onClick={() => navigate('/register')} size="lg">
-              Join Projectify Today
+              Join ProjectHub Today
             </Button>
           </div>
         </div>
