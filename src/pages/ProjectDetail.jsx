@@ -1,9 +1,10 @@
+
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import NavBar from '@/components/NavBar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, ArrowLeft, CalendarDays, Users, Search, UserPlus } from 'lucide-react';
+import { Loader2, ArrowLeft, CalendarDays, Users, Search, UserPlus, Trash2 } from 'lucide-react';
 import ProjectDetailTabs from '@/components/project/ProjectDetailTabs';
 import { NewFileDialog, NewMeetingDialog, NewTaskDialog, NewCommitDialog } from '@/components/project/ProjectDialogs';
 import {
@@ -14,6 +15,16 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import useProjectDetail from '@/hooks/useProjectDetail';
 import { toast } from '@/hooks/use-toast';
@@ -32,6 +43,10 @@ const ProjectDetail = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [teamSheetOpen, setTeamSheetOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  
+  // Extract the projectId from the URL params for clarity
+  const projectId = id;
   
   const {
     project,
@@ -65,8 +80,9 @@ const ProjectDetail = () => {
     handleAddTask,
     handleAddCollaborator,
     handleRemoveCollaborator,
+    handleDeleteProject,
     handleGoBack
-  } = useProjectDetail(id);
+  } = useProjectDetail(projectId);
 
   const handleSearch = (term) => {
     setSearchTerm(term);
@@ -124,6 +140,12 @@ const ProjectDetail = () => {
     setSearchResults([]);
   };
 
+  const confirmDeleteProject = () => {
+    handleDeleteProject();
+    setDeleteDialogOpen(false);
+    navigate('/dashboard');
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -156,10 +178,17 @@ const ProjectDetail = () => {
     <div className="min-h-screen bg-background">
       <NavBar />
       <div className="container mx-auto py-6 px-4 md:px-6 pt-20">
-        <Button variant="outline" className="mb-6" onClick={handleGoBack}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Projects
-        </Button>
+        <div className="flex justify-between items-center mb-6">
+          <Button variant="outline" onClick={handleGoBack}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Projects
+          </Button>
+          
+          <Button variant="destructive" onClick={() => setDeleteDialogOpen(true)}>
+            <Trash2 className="mr-2 h-4 w-4" />
+            Delete Project
+          </Button>
+        </div>
         
         <div className="flex flex-col md:flex-row justify-between mb-6 gap-4">
           <div>
@@ -325,6 +354,23 @@ const ProjectDetail = () => {
           setCommitMessage={setCommitMessage}
           onAddCommit={handleAddCommit}
         />
+        
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure you want to delete this project?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. All project data, files, meetings, and tasks will be permanently deleted.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction variant="destructive" onClick={confirmDeleteProject}>
+                Delete Project
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

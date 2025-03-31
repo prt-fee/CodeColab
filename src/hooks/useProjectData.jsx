@@ -105,6 +105,23 @@ const useProjectData = (projectId) => {
       }
     }
   };
+  
+  // Delete project from localStorage
+  const deleteProject = (id) => {
+    // Remove from localStorage
+    const savedProjects = localStorage.getItem('user_projects');
+    if (savedProjects) {
+      try {
+        const projects = JSON.parse(savedProjects);
+        if (Array.isArray(projects)) {
+          const filteredProjects = projects.filter(p => p.id !== id);
+          localStorage.setItem('user_projects', JSON.stringify(filteredProjects));
+        }
+      } catch (e) {
+        console.error('Failed to delete project from localStorage:', e);
+      }
+    }
+  };
 
   const handleGoBack = () => {
     navigate('/dashboard');
@@ -114,6 +131,7 @@ const useProjectData = (projectId) => {
     project,
     isLoading,
     saveProjectChanges,
+    deleteProject,
     handleGoBack
   };
 };

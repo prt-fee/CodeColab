@@ -24,6 +24,15 @@ const useProjectMeetings = (project, saveProjectChanges) => {
       return;
     }
 
+    if (!project) {
+      toast({
+        title: "Error",
+        description: "Project data is not available",
+        variant: "destructive"
+      });
+      return;
+    }
+
     const dateTime = new Date(`${newMeeting.date}T${newMeeting.time}`);
     
     const memberNames = project.members?.slice(0, 2).map(member => member.name) || [];
@@ -74,6 +83,16 @@ const useProjectMeetings = (project, saveProjectChanges) => {
   const handleDeleteMeeting = (meetingId) => {
     if (!project || !project.meetings) return;
     
+    const meetingToDelete = project.meetings.find(meeting => meeting.id === meetingId);
+    if (!meetingToDelete) {
+      toast({
+        title: "Error",
+        description: "Meeting not found",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     const updatedMeetings = project.meetings.filter(meeting => meeting.id !== meetingId);
     
     // Create activity record for deletion
@@ -81,8 +100,9 @@ const useProjectMeetings = (project, saveProjectChanges) => {
       id: Date.now().toString(),
       type: 'meeting_delete',
       user: user?.name || 'You',
+      target: meetingToDelete.title,
       timestamp: new Date().toISOString(),
-      message: `${user?.name || 'You'} deleted a meeting`
+      message: `${user?.name || 'You'} deleted "${meetingToDelete.title}" meeting`
     };
     
     const updatedProject = {

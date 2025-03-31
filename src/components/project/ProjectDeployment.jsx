@@ -20,7 +20,7 @@ const BuildLog = ({ log }) => {
   };
 
   return (
-    <div className="text-xs font-mono whitespace-pre-wrap">
+    <div className="text-xs font-mono whitespace-pre-wrap h-full overflow-y-auto">
       {log.map((item, index) => (
         <div key={index} className={getLogStyle(item.message)}>
           [{new Date(item.timestamp).toLocaleTimeString()}] {item.message}
@@ -41,7 +41,20 @@ const ProjectDeployment = () => {
   } = useProjectUploader();
 
   const handleFileChange = (e) => {
-    setFiles(Array.from(e.target.files));
+    if (e.target.files) {
+      setFiles(Array.from(e.target.files));
+    }
+  };
+
+  const handleFileDrop = (e) => {
+    e.preventDefault();
+    if (e.dataTransfer.files) {
+      setFiles(Array.from(e.dataTransfer.files));
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
   };
 
   const handleSubmit = async (e) => {
@@ -62,6 +75,12 @@ const ProjectDeployment = () => {
     setFiles([]);
   };
 
+  const openDeployedSite = () => {
+    if (deploymentUrl) {
+      window.open(deploymentUrl, '_blank');
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       <Card className="md:col-span-1">
@@ -78,6 +97,8 @@ const ProjectDeployment = () => {
               <div 
                 className="border-2 border-dashed rounded-md p-6 text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
                 onClick={() => document.getElementById('files').click()}
+                onDrop={handleFileDrop}
+                onDragOver={handleDragOver}
               >
                 <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                 <p className="text-sm mb-2">Drag and drop your project files here</p>
@@ -171,11 +192,11 @@ const ProjectDeployment = () => {
             <div className="bg-muted p-3 rounded-md flex items-center justify-between">
               <div className="text-sm truncate">
                 <span className="text-muted-foreground mr-2">Deployed at:</span>
-                <a href="#" className="text-blue-500 hover:underline">
+                <a href={deploymentUrl} className="text-blue-500 hover:underline" target="_blank" rel="noopener noreferrer">
                   {deploymentUrl}
                 </a>
               </div>
-              <Button size="sm" variant="outline">
+              <Button size="sm" variant="outline" onClick={openDeployedSite}>
                 <ExternalLink className="h-4 w-4 mr-1" />
                 Visit
               </Button>

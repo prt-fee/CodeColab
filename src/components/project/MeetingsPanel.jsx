@@ -17,6 +17,13 @@ const MeetingItem = ({ meeting, onDelete }) => {
     }).format(new Date(date));
   };
 
+  const handleDeleteClick = (e) => {
+    e.stopPropagation();
+    if (onDelete) {
+      onDelete(meeting.id);
+    }
+  };
+
   return (
     <Card className="mb-4">
       <CardContent className="p-4">
@@ -26,7 +33,12 @@ const MeetingItem = ({ meeting, onDelete }) => {
             <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
               {meeting.duration} min
             </span>
-            <Button variant="ghost" size="sm" onClick={() => onDelete(meeting.id)}>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleDeleteClick}
+              className="h-6 w-6 p-0"
+            >
               <X className="h-3 w-3" />
             </Button>
           </div>
