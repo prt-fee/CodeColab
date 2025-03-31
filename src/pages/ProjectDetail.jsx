@@ -29,6 +29,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import useProjectDetail from '@/hooks/useProjectDetail';
 import { toast } from '@/hooks/use-toast';
 import { useNotifications } from '@/context/NotificationsContext';
+import { ProjectDetailLoading, ProjectNotFound } from '@/components/project/ProjectDetailLoading';
 
 const MOCK_USERS = [
   { id: 'u1', name: 'John Doe', email: 'john@example.com', avatar: '' },
@@ -98,7 +99,16 @@ const ProjectDetail = () => {
   };
 
   const handleAddUser = (user) => {
-    const isMember = project.members && project.members.some(member => member.id === user.id);
+    if (!project || !project.members) {
+      toast({
+        title: "Error",
+        description: "Project data is not available",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const isMember = project.members.some(member => member.id === user.id);
     
     if (isMember) {
       toast({
@@ -147,22 +157,11 @@ const ProjectDetail = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
+    return <ProjectDetailLoading onGoBack={handleGoBack} />;
   }
 
   if (!project) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Project not found</h2>
-          <Button onClick={handleGoBack}>Go Back to Projects</Button>
-        </div>
-      </div>
-    );
+    return <ProjectNotFound onGoBack={handleGoBack} />;
   }
 
   const formatDate = (date) => {

@@ -62,7 +62,14 @@ const useProjectDetail = (projectId) => {
   } = useProjectCollaboration(project, saveProjectChanges);
   
   const handleDeleteProject = () => {
-    if (!project) return;
+    if (!project) {
+      toast({
+        title: "Error",
+        description: "Project data is not available",
+        variant: "destructive"
+      });
+      return;
+    }
     
     deleteProject(projectId);
     

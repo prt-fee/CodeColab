@@ -8,13 +8,21 @@ import { toast } from '@/hooks/use-toast';
 const MeetingItem = ({ meeting, onDelete }) => {
   const formatDate = (date) => {
     if (!date) return '';
+    
+    // Handle both Date objects and ISO strings
+    const meetingDate = date instanceof Date ? date : new Date(date);
+    
+    if (isNaN(meetingDate.getTime())) {
+      return 'Invalid Date';
+    }
+    
     return new Intl.DateTimeFormat('en-US', {
       weekday: 'short',
       month: 'short',
       day: 'numeric',
       hour: 'numeric',
       minute: 'numeric'
-    }).format(new Date(date));
+    }).format(meetingDate);
   };
 
   const handleDeleteClick = (e) => {
@@ -28,7 +36,7 @@ const MeetingItem = ({ meeting, onDelete }) => {
     <Card className="mb-4">
       <CardContent className="p-4">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="font-medium">{meeting.title}</h3>
+          <h3 className="font-medium text-base">{meeting.title}</h3>
           <div className="flex space-x-2">
             <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
               {meeting.duration} min
@@ -56,11 +64,27 @@ const MeetingItem = ({ meeting, onDelete }) => {
 };
 
 const MeetingsPanel = ({ meetings = [], onAddMeetingClick, onDeleteMeeting }) => {
-  const [projectMeetings, setProjectMeetings] = useState(meetings);
+  const [projectMeetings, setProjectMeetings] = useState([]);
   
   // Update meetings when the prop changes
   useEffect(() => {
-    setProjectMeetings(meetings);
+    if (Array.isArray(meetings)) {
+      // Ensure meetings are properly formatted
+      const formattedMeetings = meetings.map(meeting => {
+        // If date is a string, convert to Date object
+        if (meeting.date && typeof meeting.date === 'string') {
+          return {
+            ...meeting,
+            date: new Date(meeting.date)
+          };
+        }
+        return meeting;
+      });
+      
+      setProjectMeetings(formattedMeetings);
+    } else {
+      setProjectMeetings([]);
+    }
   }, [meetings]);
 
   const handleDeleteMeeting = (id) => {

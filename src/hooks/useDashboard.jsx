@@ -75,19 +75,23 @@ const useDashboard = () => {
               } else {
                 console.warn('Saved projects is not an array, using mock data');
                 setProjects(mockProjects);
+                localStorage.setItem('user_projects', JSON.stringify(mockProjects));
               }
             } catch (e) {
               console.error('Failed to parse saved projects', e);
               setProjects(mockProjects);
+              localStorage.setItem('user_projects', JSON.stringify(mockProjects));
             }
           } else {
             setProjects(mockProjects);
+            localStorage.setItem('user_projects', JSON.stringify(mockProjects));
           }
         }
       } catch (err) {
         console.error('Error fetching projects:', err);
         setError('Failed to load projects');
         setProjects(mockProjects);
+        localStorage.setItem('user_projects', JSON.stringify(mockProjects));
       } finally {
         setIsLoading(false);
       }
@@ -104,6 +108,16 @@ const useDashboard = () => {
   }, [projects, isLoading]);
 
   const handleProjectClick = (projectId) => {
+    if (!projectId) {
+      toast({
+        title: "Error",
+        description: "Project ID is missing",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Use the navigate function to properly navigate to the project detail page
     navigate(`/projects/${projectId}`);
   };
 

@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from '@/hooks/use-toast';
 
 // Initial mock projects data
 const mockProjects = [
@@ -68,14 +69,25 @@ const useProjects = () => {
         }
       } else {
         setProjects(mockProjects);
+        // Initialize localStorage with mock data
+        localStorage.setItem('user_projects', JSON.stringify(mockProjects));
       }
       setIsLoading(false);
-    }, 1000);
+    }, 500); // Reduced the loading time for better user experience
     
     return () => clearTimeout(timer);
   }, []);
 
   const navigateToProject = (projectId) => {
+    if (!projectId) {
+      toast({
+        title: "Error",
+        description: "Project ID is missing",
+        variant: "destructive"
+      });
+      return;
+    }
+    // Use the navigate function to properly navigate to the project detail page
     navigate(`/projects/${projectId}`);
   };
 

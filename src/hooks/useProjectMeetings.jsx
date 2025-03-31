@@ -35,6 +35,15 @@ const useProjectMeetings = (project, saveProjectChanges) => {
 
     const dateTime = new Date(`${newMeeting.date}T${newMeeting.time}`);
     
+    if (isNaN(dateTime.getTime())) {
+      toast({
+        title: "Error",
+        description: "Invalid date or time",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     const memberNames = project.members?.slice(0, 2).map(member => member.name) || [];
     
     const newMeetingData = {
@@ -81,7 +90,14 @@ const useProjectMeetings = (project, saveProjectChanges) => {
   };
   
   const handleDeleteMeeting = (meetingId) => {
-    if (!project || !project.meetings) return;
+    if (!project || !project.meetings) {
+      toast({
+        title: "Error",
+        description: "Project data is not available",
+        variant: "destructive"
+      });
+      return;
+    }
     
     const meetingToDelete = project.meetings.find(meeting => meeting.id === meetingId);
     if (!meetingToDelete) {
