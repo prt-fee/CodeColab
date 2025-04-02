@@ -2,15 +2,14 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  signOut, 
-  onAuthStateChanged,
-  updateProfile 
-} from 'firebase/auth';
-import { ref, set, get } from 'firebase/database';
-import { auth, database } from '@/services/firebase';
-import { toast } from '@/hooks/use-toast';
+  loginWithEmailPassword, 
+  registerWithEmailPassword, 
+  logoutUser, 
+  getUserData,
+  subscribeToAuthChanges
+} from '@/services/authService';
+import useLocalStorage from '@/hooks/useLocalStorage';
+import { showSuccessToast, showErrorToast } from '@/services/toastService';
 
 // Create the context
 const AuthContext = createContext(null);
@@ -20,50 +19,24 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const { saveUser, getUser } = useLocalStorage();
 
   // Check if user is already logged in
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    const unsubscribe = subscribeToAuthChanges(async (firebaseUser) => {
       setIsLoading(true);
       try {
         if (firebaseUser) {
-          // If user exists in Firebase auth, get additional data from database
-          const userRef = ref(database, `users/${firebaseUser.uid}`);
-          const snapshot = await get(userRef);
-          
-          if (snapshot.exists()) {
-            const userData = snapshot.val();
-            const userDetails = {
-              id: firebaseUser.uid,
-              name: userData.name || firebaseUser.displayName,
-              email: firebaseUser.email,
-              avatar: userData.avatar || firebaseUser.photoURL || 'https://randomuser.me/api/portraits/men/32.jpg'
-            };
-            
-            setUser(userDetails);
-            localStorage.setItem('projectify_user', JSON.stringify(userDetails));
-          } else {
-            // Create user data if it doesn't exist in database
-            const userDetails = {
-              id: firebaseUser.uid,
-              name: firebaseUser.displayName || firebaseUser.email.split('@')[0],
-              email: firebaseUser.email,
-              avatar: firebaseUser.photoURL || 'https://randomuser.me/api/portraits/men/32.jpg',
-              createdAt: new Date().toISOString()
-            };
-            
-            await set(userRef, userDetails);
-            setUser(userDetails);
-            localStorage.setItem('projectify_user', JSON.stringify(userDetails));
-          }
+          const userDetails = await getUserData(firebaseUser);
+          setUser(userDetails);
+          saveUser(userDetails);
         } else {
-          // If no user, clear state and localStorage
           setUser(null);
-          localStorage.removeItem('projectify_user');
+          saveUser(null);
         }
       } catch (error) {
         console.error("Auth check error:", error);
-        localStorage.removeItem('projectify_user');
+        saveUser(null);
       } finally {
         setIsLoading(false);
       }
@@ -77,55 +50,25 @@ export const AuthProvider = ({ children }) => {
     setIsLoading(true);
     
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const firebaseUser = userCredential.user;
-      
-      // Get additional user data from database
-      const userRef = ref(database, `users/${firebaseUser.uid}`);
-      const snapshot = await get(userRef);
-      
-      let userDetails;
-      if (snapshot.exists()) {
-        const userData = snapshot.val();
-        userDetails = {
-          id: firebaseUser.uid,
-          name: userData.name || firebaseUser.displayName,
-          email: firebaseUser.email,
-          avatar: userData.avatar || firebaseUser.photoURL || 'https://randomuser.me/api/portraits/men/32.jpg'
-        };
-      } else {
-        // Create user data if it doesn't exist
-        userDetails = {
-          id: firebaseUser.uid,
-          name: firebaseUser.displayName || email.split('@')[0],
-          email: firebaseUser.email,
-          avatar: firebaseUser.photoURL || 'https://randomuser.me/api/portraits/men/32.jpg',
-          createdAt: new Date().toISOString()
-        };
-        await set(userRef, userDetails);
-      }
-      
+      const userDetails = await loginWithEmailPassword(email, password);
       setUser(userDetails);
-      localStorage.setItem('projectify_user', JSON.stringify(userDetails));
-      setIsLoading(false);
+      saveUser(userDetails);
       
-      toast({
-        title: "Login successful",
-        description: "Welcome back!",
-      });
+      showSuccessToast(
+        "Login successful",
+        "Welcome back!"
+      );
       
       return true;
     } catch (error) {
-      setIsLoading(false);
-      console.error('Login error:', error);
-      
-      toast({
-        title: "Login failed",
-        description: error.message || "Invalid credentials",
-        variant: "destructive"
-      });
+      showErrorToast(
+        "Login failed",
+        error.message || "Invalid credentials"
+      );
       
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -134,72 +77,47 @@ export const AuthProvider = ({ children }) => {
     setIsLoading(true);
     
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const firebaseUser = userCredential.user;
-      
-      // Update profile
-      await updateProfile(firebaseUser, {
-        displayName: name
-      });
-      
-      // Save additional user data
-      const userRef = ref(database, `users/${firebaseUser.uid}`);
-      const userDetails = {
-        id: firebaseUser.uid,
-        name: name,
-        email: email,
-        avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
-        createdAt: new Date().toISOString()
-      };
-      
-      await set(userRef, userDetails);
-      
+      const userDetails = await registerWithEmailPassword(name, email, password);
       setUser(userDetails);
-      localStorage.setItem('projectify_user', JSON.stringify(userDetails));
-      setIsLoading(false);
+      saveUser(userDetails);
       
-      toast({
-        title: "Registration successful",
-        description: "Your account has been created",
-      });
+      showSuccessToast(
+        "Registration successful",
+        "Your account has been created"
+      );
       
       navigate('/dashboard');
       return true;
     } catch (error) {
-      setIsLoading(false);
-      console.error('Registration error:', error);
-      
-      toast({
-        title: "Registration failed",
-        description: error.message || "Could not create account",
-        variant: "destructive"
-      });
+      showErrorToast(
+        "Registration failed",
+        error.message || "Could not create account"
+      );
       
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   // Logout function
   const logout = async () => {
     try {
-      await signOut(auth);
+      await logoutUser();
       setUser(null);
-      localStorage.removeItem('projectify_user');
+      saveUser(null);
       
-      toast({
-        title: "Logged out",
-        description: "You've been successfully logged out",
-      });
+      showSuccessToast(
+        "Logged out",
+        "You've been successfully logged out"
+      );
       
       navigate('/');
     } catch (error) {
-      console.error('Logout error:', error);
-      
-      toast({
-        title: "Logout failed",
-        description: error.message || "Could not log out",
-        variant: "destructive"
-      });
+      showErrorToast(
+        "Logout failed",
+        error.message || "Could not log out"
+      );
     }
   };
 
@@ -208,7 +126,7 @@ export const AuthProvider = ({ children }) => {
     if (user) {
       const updatedUser = {...user, ...updatedUserData};
       setUser(updatedUser);
-      localStorage.setItem('projectify_user', JSON.stringify(updatedUser));
+      saveUser(updatedUser);
       return true;
     }
     return false;
