@@ -24,7 +24,7 @@ import About from './pages/About';
 import Contact from './pages/Contact';
 import Features from './pages/Features';
 
-// Import Firebase initialization
+// Import Firebase initialization to ensure it's loaded before AuthProvider
 import './services/firebase';
 
 const queryClient = new QueryClient();

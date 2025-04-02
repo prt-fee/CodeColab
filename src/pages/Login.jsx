@@ -30,7 +30,6 @@ const Login = () => {
     try {
       setIsSubmitting(true);
       await login(email, password);
-      console.log("Login successful, redirecting to dashboard");
       navigate('/dashboard');
     } catch (error) {
       console.error("Login error:", error);
