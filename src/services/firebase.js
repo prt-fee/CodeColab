@@ -11,7 +11,7 @@ const firebaseConfig = {
   authDomain: "code-collab-dedbb.firebaseapp.com",
   databaseURL: "https://code-collab-dedbb-default-rtdb.firebaseio.com",
   projectId: "code-collab-dedbb",
-  storageBucket: "code-collab-dedbb.firebasestorage.app",
+  storageBucket: "code-collab-dedbb.appspot.com",
   messagingSenderId: "239531618637",
   appId: "1:239531618637:web:f24724b61e53a7048a8704",
   measurementId: "G-3FPFPW0VZQ"
