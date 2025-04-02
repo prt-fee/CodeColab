@@ -1,6 +1,13 @@
 
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import { NotificationsProvider } from './context/NotificationsContext';
+import { Toaster } from './components/ui/toaster';
+import { Toaster as Sonner } from './components/ui/sonner';
+import { TooltipProvider } from './components/ui/tooltip';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+// Import pages
 import Index from './pages/Index';
 import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
@@ -16,12 +23,9 @@ import Chat from './pages/Chat';
 import About from './pages/About';
 import Contact from './pages/Contact';
 import Features from './pages/Features';
-import { AuthProvider } from './context/AuthContext';
-import { NotificationsProvider } from './context/NotificationsContext';
-import { Toaster } from './components/ui/toaster';
-import { Toaster as Sonner } from './components/ui/sonner';
-import { TooltipProvider } from './components/ui/tooltip';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+// Import Firebase initialization
+import './services/firebase';
 
 const queryClient = new QueryClient();
 
@@ -32,8 +36,8 @@ function App() {
         <AuthProvider>
           <NotificationsProvider>
             <TooltipProvider>
-            <Toaster />
-            <Sonner />
+              <Toaster />
+              <Sonner />
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/dashboard" element={<Dashboard />} />
@@ -51,8 +55,6 @@ function App() {
                 <Route path="/features" element={<Features />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
-              {/* <Toaster />
-              <Sonner /> */}
             </TooltipProvider>
           </NotificationsProvider>
         </AuthProvider>

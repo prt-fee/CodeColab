@@ -1,8 +1,15 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { auth as firebaseAuth } from '@/services/firebase';
-import { authAPI } from '@/services/firebaseAPI';
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signOut, 
+  onAuthStateChanged,
+  updateProfile 
+} from 'firebase/auth';
+import { ref, set, get } from 'firebase/database';
+import { auth, database } from '@/services/firebase';
 import { toast } from '@/hooks/use-toast';
 
 // Create the context
@@ -16,21 +23,53 @@ export const AuthProvider = ({ children }) => {
 
   // Check if user is already logged in
   useEffect(() => {
-    const checkAuth = async () => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setIsLoading(true);
       try {
-        const currentUser = await authAPI.getCurrentUser();
-        setUser(currentUser);
+        if (firebaseUser) {
+          // If user exists in Firebase auth, get additional data from database
+          const userRef = ref(database, `users/${firebaseUser.uid}`);
+          const snapshot = await get(userRef);
+          
+          if (snapshot.exists()) {
+            const userData = snapshot.val();
+            const userDetails = {
+              id: firebaseUser.uid,
+              name: userData.name || firebaseUser.displayName,
+              email: firebaseUser.email,
+              avatar: userData.avatar || firebaseUser.photoURL || 'https://randomuser.me/api/portraits/men/32.jpg'
+            };
+            
+            setUser(userDetails);
+            localStorage.setItem('projectify_user', JSON.stringify(userDetails));
+          } else {
+            // Create user data if it doesn't exist in database
+            const userDetails = {
+              id: firebaseUser.uid,
+              name: firebaseUser.displayName || firebaseUser.email.split('@')[0],
+              email: firebaseUser.email,
+              avatar: firebaseUser.photoURL || 'https://randomuser.me/api/portraits/men/32.jpg',
+              createdAt: new Date().toISOString()
+            };
+            
+            await set(userRef, userDetails);
+            setUser(userDetails);
+            localStorage.setItem('projectify_user', JSON.stringify(userDetails));
+          }
+        } else {
+          // If no user, clear state and localStorage
+          setUser(null);
+          localStorage.removeItem('projectify_user');
+        }
       } catch (error) {
         console.error("Auth check error:", error);
-        // If there's an error, clear localStorage as a fallback
         localStorage.removeItem('projectify_user');
       } finally {
         setIsLoading(false);
       }
-    };
+    });
 
-    checkAuth();
+    return () => unsubscribe();
   }, []);
 
   // Login function
@@ -38,7 +77,33 @@ export const AuthProvider = ({ children }) => {
     setIsLoading(true);
     
     try {
-      const userDetails = await authAPI.login({ email, password });
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const firebaseUser = userCredential.user;
+      
+      // Get additional user data from database
+      const userRef = ref(database, `users/${firebaseUser.uid}`);
+      const snapshot = await get(userRef);
+      
+      let userDetails;
+      if (snapshot.exists()) {
+        const userData = snapshot.val();
+        userDetails = {
+          id: firebaseUser.uid,
+          name: userData.name || firebaseUser.displayName,
+          email: firebaseUser.email,
+          avatar: userData.avatar || firebaseUser.photoURL || 'https://randomuser.me/api/portraits/men/32.jpg'
+        };
+      } else {
+        // Create user data if it doesn't exist
+        userDetails = {
+          id: firebaseUser.uid,
+          name: firebaseUser.displayName || email.split('@')[0],
+          email: firebaseUser.email,
+          avatar: firebaseUser.photoURL || 'https://randomuser.me/api/portraits/men/32.jpg',
+          createdAt: new Date().toISOString()
+        };
+        await set(userRef, userDetails);
+      }
       
       setUser(userDetails);
       localStorage.setItem('projectify_user', JSON.stringify(userDetails));
@@ -69,7 +134,25 @@ export const AuthProvider = ({ children }) => {
     setIsLoading(true);
     
     try {
-      const userDetails = await authAPI.register({ name, email, password });
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const firebaseUser = userCredential.user;
+      
+      // Update profile
+      await updateProfile(firebaseUser, {
+        displayName: name
+      });
+      
+      // Save additional user data
+      const userRef = ref(database, `users/${firebaseUser.uid}`);
+      const userDetails = {
+        id: firebaseUser.uid,
+        name: name,
+        email: email,
+        avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
+        createdAt: new Date().toISOString()
+      };
+      
+      await set(userRef, userDetails);
       
       setUser(userDetails);
       localStorage.setItem('projectify_user', JSON.stringify(userDetails));
@@ -80,6 +163,7 @@ export const AuthProvider = ({ children }) => {
         description: "Your account has been created",
       });
       
+      navigate('/dashboard');
       return true;
     } catch (error) {
       setIsLoading(false);
@@ -95,10 +179,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Logout function - updated to redirect to index page
+  // Logout function
   const logout = async () => {
     try {
-      await authAPI.logout();
+      await signOut(auth);
       setUser(null);
       localStorage.removeItem('projectify_user');
       
