@@ -29,18 +29,12 @@ const Login = () => {
     
     try {
       setIsSubmitting(true);
-      const success = login(email, password);
-      
-      if (success) {
-        console.log("Login successful, redirecting to dashboard");
-        navigate('/dashboard');
-      }
+      await login(email, password);
+      console.log("Login successful, redirecting to dashboard");
+      navigate('/dashboard');
     } catch (error) {
-      toast({
-        title: "Login Failed",
-        description: error.message || "Invalid credentials",
-        variant: "destructive"
-      });
+      console.error("Login error:", error);
+      // Toast is handled in AuthContext
     } finally {
       setIsSubmitting(false);
     }

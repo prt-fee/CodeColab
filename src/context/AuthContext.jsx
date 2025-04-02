@@ -1,6 +1,9 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { auth as firebaseAuth } from '@/services/firebase';
+import { authAPI } from '@/services/firebaseAPI';
+import { toast } from '@/hooks/use-toast';
 
 // Create the context
 const AuthContext = createContext(null);
@@ -13,78 +16,107 @@ export const AuthProvider = ({ children }) => {
 
   // Check if user is already logged in
   useEffect(() => {
-    const checkAuth = () => {
-      const storedUser = localStorage.getItem('projectify_user');
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
+    const checkAuth = async () => {
+      setIsLoading(true);
+      try {
+        const currentUser = await authAPI.getCurrentUser();
+        setUser(currentUser);
+      } catch (error) {
+        console.error("Auth check error:", error);
+        // If there's an error, clear localStorage as a fallback
+        localStorage.removeItem('projectify_user');
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
     checkAuth();
   }, []);
 
   // Login function
-  const login = (email, password) => {
+  const login = async (email, password) => {
     setIsLoading(true);
     
     try {
-      // In a real app, you would validate credentials with your API
-      if (email && password) {
-        // Instead of using MOCK_USER, create a user with the provided email
-        const loginUser = {
-          id: '1',
-          name: email.split('@')[0], // Use the part before @ as a simple name
-          email: email,
-          avatar: 'https://randomuser.me/api/portraits/men/32.jpg'
-        };
-        
-        setUser(loginUser);
-        localStorage.setItem('projectify_user', JSON.stringify(loginUser));
-        setIsLoading(false);
-        return true;
-      } else {
-        throw new Error('Invalid credentials');
-      }
+      const userDetails = await authAPI.login({ email, password });
+      
+      setUser(userDetails);
+      localStorage.setItem('projectify_user', JSON.stringify(userDetails));
+      setIsLoading(false);
+      
+      toast({
+        title: "Login successful",
+        description: "Welcome back!",
+      });
+      
+      return true;
     } catch (error) {
       setIsLoading(false);
       console.error('Login error:', error);
+      
+      toast({
+        title: "Login failed",
+        description: error.message || "Invalid credentials",
+        variant: "destructive"
+      });
+      
       throw error;
     }
   };
 
   // Register function
-  const register = (name, email, password) => {
+  const register = async (name, email, password) => {
     setIsLoading(true);
     
     try {
-      // In a real app, you would register the user with your API
-      if (name && email && password) {
-        const newUser = {
-          id: '1',
-          name: name,
-          email: email,
-          avatar: 'https://randomuser.me/api/portraits/men/32.jpg'
-        };
-        setUser(newUser);
-        localStorage.setItem('projectify_user', JSON.stringify(newUser));
-        setIsLoading(false);
-        return true;
-      } else {
-        throw new Error('Invalid registration data');
-      }
+      const userDetails = await authAPI.register({ name, email, password });
+      
+      setUser(userDetails);
+      localStorage.setItem('projectify_user', JSON.stringify(userDetails));
+      setIsLoading(false);
+      
+      toast({
+        title: "Registration successful",
+        description: "Your account has been created",
+      });
+      
+      return true;
     } catch (error) {
       setIsLoading(false);
       console.error('Registration error:', error);
+      
+      toast({
+        title: "Registration failed",
+        description: error.message || "Could not create account",
+        variant: "destructive"
+      });
+      
       throw error;
     }
   };
 
   // Logout function - updated to redirect to index page
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('projectify_user');
-    navigate('/'); // Changed from /login to / (index page)
+  const logout = async () => {
+    try {
+      await authAPI.logout();
+      setUser(null);
+      localStorage.removeItem('projectify_user');
+      
+      toast({
+        title: "Logged out",
+        description: "You've been successfully logged out",
+      });
+      
+      navigate('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+      
+      toast({
+        title: "Logout failed",
+        description: error.message || "Could not log out",
+        variant: "destructive"
+      });
+    }
   };
 
   // Update user function
