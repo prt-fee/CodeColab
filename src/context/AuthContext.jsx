@@ -7,10 +7,12 @@ import {
   logoutUser, 
   getUserData,
   subscribeToAuthChanges,
-  updateUserProfile
+  updateUserProfile,
+  createTestUser
 } from '@/services/authService';
 import useLocalStorage from '@/hooks/useLocalStorage';
 import { showSuccessToast, showErrorToast } from '@/services/toastService';
+import { debugFirebase } from '@/utils/debugFirebase';
 
 // Create the context
 const AuthContext = createContext(null);
@@ -25,6 +27,13 @@ export const AuthProvider = ({ children }) => {
   // Check if user is already logged in
   useEffect(() => {
     console.log("AuthProvider: Checking authentication status");
+    
+    // Try to load user from localStorage first as a fallback
+    const storedUser = getUser();
+    if (storedUser) {
+      setUser(storedUser);
+    }
+    
     const unsubscribe = subscribeToAuthChanges(async (firebaseUser) => {
       setIsLoading(true);
       try {
@@ -36,15 +45,47 @@ export const AuthProvider = ({ children }) => {
             saveUser(userDetails);
           } catch (dataError) {
             console.error("Error getting user data:", dataError);
-            // Fallback to basic user info
-            const basicUserInfo = {
-              id: firebaseUser.uid,
-              name: firebaseUser.displayName || firebaseUser.email.split('@')[0],
-              email: firebaseUser.email,
-              avatar: firebaseUser.photoURL || 'https://randomuser.me/api/portraits/men/32.jpg'
-            };
-            setUser(basicUserInfo);
-            saveUser(basicUserInfo);
+            
+            // If we get a permission denied error, attempt to create the user in the database
+            if (dataError.message && dataError.message.includes('Permission denied')) {
+              try {
+                // Create basic user profile since it doesn't exist
+                const basicUserInfo = {
+                  id: firebaseUser.uid,
+                  name: firebaseUser.displayName || firebaseUser.email.split('@')[0],
+                  email: firebaseUser.email,
+                  avatar: firebaseUser.photoURL || 'https://randomuser.me/api/portraits/men/32.jpg',
+                  createdAt: new Date().toISOString()
+                };
+                
+                // Try to update the user profile
+                await updateUserProfile(firebaseUser.uid, basicUserInfo);
+                setUser(basicUserInfo);
+                saveUser(basicUserInfo);
+              } catch (createError) {
+                console.error("Failed to create user profile:", createError);
+                
+                // Fallback to basic user info if all fails
+                const fallbackUserInfo = {
+                  id: firebaseUser.uid,
+                  name: firebaseUser.displayName || firebaseUser.email.split('@')[0],
+                  email: firebaseUser.email,
+                  avatar: firebaseUser.photoURL || 'https://randomuser.me/api/portraits/men/32.jpg'
+                };
+                setUser(fallbackUserInfo);
+                saveUser(fallbackUserInfo);
+              }
+            } else {
+              // Fallback to basic user info
+              const basicUserInfo = {
+                id: firebaseUser.uid,
+                name: firebaseUser.displayName || firebaseUser.email.split('@')[0],
+                email: firebaseUser.email,
+                avatar: firebaseUser.photoURL || 'https://randomuser.me/api/portraits/men/32.jpg'
+              };
+              setUser(basicUserInfo);
+              saveUser(basicUserInfo);
+            }
           }
         } else {
           console.log("AuthProvider: No user logged in");
@@ -59,6 +100,17 @@ export const AuthProvider = ({ children }) => {
       }
     });
 
+    // For development, create a test user automatically if in development mode
+    if (process.env.NODE_ENV === 'development') {
+      // Uncomment the next line to create test user on startup
+      // createTestUser();
+    }
+    
+    // Debugging - can be removed in production
+    if (process.env.NODE_ENV === 'development') {
+      window.debugFirebase = debugFirebase;
+    }
+
     // Clean up subscription on unmount
     return () => unsubscribe();
   }, []);
@@ -68,6 +120,7 @@ export const AuthProvider = ({ children }) => {
     setIsLoading(true);
     
     try {
+      console.log("Attempting login with:", email);
       const userDetails = await loginWithEmailPassword(email, password);
       setUser(userDetails);
       saveUser(userDetails);
@@ -80,12 +133,26 @@ export const AuthProvider = ({ children }) => {
       navigate('/dashboard');
       return true;
     } catch (error) {
+      console.error("Login error:", error);
+      
+      // Handle specific Firebase error codes
+      let errorMessage;
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/invalid-email' || error.code === 'auth/wrong-password') {
+        errorMessage = "Invalid email or password. Please try again.";
+      } else if (error.code === 'auth/user-not-found') {
+        errorMessage = "No account found with this email. Please register first.";
+      } else if (error.code === 'auth/too-many-requests') {
+        errorMessage = "Too many failed login attempts. Please try again later.";
+      } else {
+        errorMessage = error.message || "Invalid credentials";
+      }
+      
       showErrorToast(
         "Login failed",
-        error.message || "Invalid credentials"
+        errorMessage
       );
       
-      throw error;
+      throw new Error(errorMessage, { cause: error });
     } finally {
       setIsLoading(false);
     }
@@ -96,6 +163,7 @@ export const AuthProvider = ({ children }) => {
     setIsLoading(true);
     
     try {
+      console.log("Attempting registration for:", email);
       const userDetails = await registerWithEmailPassword(name, email, password);
       setUser(userDetails);
       saveUser(userDetails);
@@ -108,12 +176,26 @@ export const AuthProvider = ({ children }) => {
       navigate('/dashboard');
       return true;
     } catch (error) {
+      console.error("Registration error:", error);
+      
+      // Handle specific Firebase error codes
+      let errorMessage;
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = "This email is already registered. Please log in instead.";
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = "Invalid email address format.";
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = "Password is too weak. Please use at least 6 characters.";
+      } else {
+        errorMessage = error.message || "Could not create account";
+      }
+      
       showErrorToast(
         "Registration failed",
-        error.message || "Could not create account"
+        errorMessage
       );
       
-      throw error;
+      throw new Error(errorMessage, { cause: error });
     } finally {
       setIsLoading(false);
     }
