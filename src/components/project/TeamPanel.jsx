@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Users, UserPlus, Mail, X } from 'lucide-react';
@@ -13,10 +13,19 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
-const TeamPanel = ({ members }) => {
+const TeamPanel = ({ members = [] }) => {
   const [showAddMember, setShowAddMember] = useState(false);
   const [newMember, setNewMember] = useState({ name: '', email: '', avatar: '' });
-  const [teamMembers, setTeamMembers] = useState(members || []);
+  
+  // Convert members to array if it's not already
+  const [teamMembers, setTeamMembers] = useState(
+    Array.isArray(members) ? members : []
+  );
+  
+  // Update teamMembers when the members prop changes
+  useEffect(() => {
+    setTeamMembers(Array.isArray(members) ? members : []);
+  }, [members]);
 
   const handleAddMember = () => {
     if (!newMember.name.trim() || !newMember.email.trim()) {
@@ -88,11 +97,12 @@ const TeamPanel = ({ members }) => {
               </Button>
             </div>
           ) : (
-            teamMembers.map(member => (
-              <div key={member.id} className="flex items-center justify-between p-3 border rounded-lg">
+            teamMembers.map((member, index) => (
+              <div key={member.id || index} className="flex items-center justify-between p-3 border rounded-lg">
                 <div className="flex items-center">
                   <div className="h-10 w-10 rounded-full bg-accent overflow-hidden mr-3">
-                    <img src={member.avatar} alt={member.name} className="h-full w-full object-cover" />
+                    <img src={member.avatar} alt={member.name} className="h-full w-full object-cover" 
+                         onError={(e) => {e.target.src = 'https://i.pravatar.cc/150'; e.target.onerror = null;}} />
                   </div>
                   <div>
                     <h4 className="font-medium">{member.name}</h4>

@@ -7,6 +7,9 @@ import { X } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 const CollaboratorsList = ({ collaborators = [], email, setEmail, onInviteCollaborator, onRemoveCollaborator }) => {
+  // Ensure collaborators is always an array
+  const collaboratorsArray = Array.isArray(collaborators) ? collaborators : [];
+  
   return (
     <Card>
       <CardHeader>
@@ -24,9 +27,9 @@ const CollaboratorsList = ({ collaborators = [], email, setEmail, onInviteCollab
             <Button onClick={onInviteCollaborator}>Invite</Button>
           </div>
           
-          {collaborators.length > 0 ? (
+          {collaboratorsArray.length > 0 ? (
             <div className="space-y-3">
-              {collaborators.map(collab => (
+              {collaboratorsArray.map(collab => (
                 <div key={collab.id} className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex items-center">
                     <Avatar className="h-8 w-8 mr-3">

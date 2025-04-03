@@ -11,7 +11,8 @@ const DashboardContent = () => {
   const {
     projects,
     isLoading,
-    handleProjectClick
+    handleProjectClick,
+    deleteProject
   } = useDashboard();
 
   const { tasks } = useTaskManager();
@@ -46,6 +47,7 @@ const DashboardContent = () => {
         projects={projects}
         onCreateClick={() => window.location.href = "/projects"}
         onProjectClick={handleProjectClick}
+        onDeleteProject={deleteProject}
       />
       
       <RecentTasks tasks={tasks} />
