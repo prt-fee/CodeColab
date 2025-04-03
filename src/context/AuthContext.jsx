@@ -6,7 +6,8 @@ import {
   registerWithEmailPassword, 
   logoutUser, 
   getUserData,
-  subscribeToAuthChanges
+  subscribeToAuthChanges,
+  updateUserProfile
 } from '@/services/authService';
 import useLocalStorage from '@/hooks/useLocalStorage';
 import { showSuccessToast, showErrorToast } from '@/services/toastService';
@@ -23,14 +24,17 @@ export const AuthProvider = ({ children }) => {
 
   // Check if user is already logged in
   useEffect(() => {
+    console.log("AuthProvider: Checking authentication status");
     const unsubscribe = subscribeToAuthChanges(async (firebaseUser) => {
       setIsLoading(true);
       try {
         if (firebaseUser) {
+          console.log("AuthProvider: User is logged in:", firebaseUser.uid);
           const userDetails = await getUserData(firebaseUser);
           setUser(userDetails);
           saveUser(userDetails);
         } else {
+          console.log("AuthProvider: No user logged in");
           setUser(null);
           saveUser(null);
         }
@@ -42,6 +46,7 @@ export const AuthProvider = ({ children }) => {
       }
     });
 
+    // Clean up subscription on unmount
     return () => unsubscribe();
   }, []);
 
@@ -59,6 +64,7 @@ export const AuthProvider = ({ children }) => {
         "Welcome back!"
       );
       
+      navigate('/dashboard');
       return true;
     } catch (error) {
       showErrorToast(
@@ -122,26 +128,43 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Update user function
-  const updateUser = (updatedUserData) => {
-    if (user) {
+  const updateUser = async (updatedUserData) => {
+    if (!user) return false;
+    
+    try {
+      await updateUserProfile(user.id, updatedUserData);
       const updatedUser = {...user, ...updatedUserData};
       setUser(updatedUser);
       saveUser(updatedUser);
+      
+      showSuccessToast(
+        "Profile updated",
+        "Your profile has been successfully updated"
+      );
+      
       return true;
+    } catch (error) {
+      showErrorToast(
+        "Update failed",
+        error.message || "Could not update profile"
+      );
+      return false;
     }
-    return false;
+  };
+
+  // Context value
+  const contextValue = {
+    user, 
+    isAuthenticated: !!user, 
+    loading: isLoading, 
+    login, 
+    register, 
+    logout,
+    updateUser
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      isAuthenticated: !!user, 
-      loading: isLoading, 
-      login, 
-      register, 
-      logout,
-      updateUser
-    }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

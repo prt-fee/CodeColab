@@ -15,6 +15,7 @@ import ProjectDetail from './pages/ProjectDetail';
 import Tasks from './pages/Tasks';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword'; // Add the new page
 import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
 import ProjectUpload from './pages/ProjectUpload';
@@ -49,6 +50,7 @@ function App() {
                 <Route path="/chat" element={<Chat />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} /> {/* New route */}
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/contact" element={<Contact />} />
