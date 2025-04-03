@@ -6,6 +6,9 @@ import { Plus } from 'lucide-react';
 import ProjectCard from './ProjectCard';
 
 const ProjectsList = ({ projects, onCreateClick, onProjectClick, onDeleteProject }) => {
+  // Ensure projects is always an array
+  const safeProjects = Array.isArray(projects) ? projects : [];
+  
   return (
     <div className="mb-12">
       <div className="flex items-center justify-between mb-6">
@@ -16,7 +19,7 @@ const ProjectsList = ({ projects, onCreateClick, onProjectClick, onDeleteProject
         </Button>
       </div>
       
-      {projects.length === 0 ? (
+      {safeProjects.length === 0 ? (
         <Card className="text-center py-8">
           <CardContent>
             <p className="text-muted-foreground mb-4">You don't have any projects yet</p>
@@ -28,12 +31,12 @@ const ProjectsList = ({ projects, onCreateClick, onProjectClick, onDeleteProject
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map((project) => (
+          {safeProjects.map((project) => (
             <ProjectCard
               key={project.id}
               project={project}
               onClick={() => onProjectClick(project.id)}
-              onDelete={onDeleteProject}
+              onDelete={() => onDeleteProject(project.id)}
             />
           ))}
         </div>

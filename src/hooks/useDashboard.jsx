@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 import { projectAPI } from '@/services/firebaseAPI';
@@ -49,15 +49,18 @@ const mockProjects = [
 
 // Utility function to normalize project data
 const normalizeProject = (project) => {
+  // Ensure members is an array
+  const members = Array.isArray(project.members) ? project.members : [];
+  
   return {
     ...project,
     id: project.id || `temp-${Date.now()}`,
-    title: project.title || 'Untitled Project',
+    title: project.title || project.name || 'Untitled Project',
     description: project.description || '',
     color: project.color || 'blue',
     dueDate: project.dueDate ? new Date(project.dueDate) : new Date(),
     // Ensure members is always an array
-    members: Array.isArray(project.members) ? project.members : [],
+    members: members,
     // Ensure tasksCount exists with proper structure
     tasksCount: project.tasksCount || { total: 0, completed: 0 },
     // Ensure other required arrays exist
@@ -75,8 +78,8 @@ const useDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Load projects from Firebase
-  useEffect(() => {
+  // Function to refresh projects - separate from effect to be callable
+  const refreshProjects = useCallback(() => {
     if (!user) return;
     
     setIsLoading(true);
@@ -101,14 +104,24 @@ const useDashboard = () => {
       });
       
       // Return cleanup function
-      return () => {
-        unsubscribe();
-      };
+      return unsubscribe;
     } catch (err) {
       console.error('Error fetching projects:', err);
       handleFirebaseError();
     }
   }, [user]);
+
+  // Load projects from Firebase
+  useEffect(() => {
+    const unsubscribe = refreshProjects();
+    
+    // Cleanup on unmount
+    return () => {
+      if (unsubscribe && typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
+    };
+  }, [refreshProjects]);
 
   const handleFirebaseError = () => {
     setError('Failed to load projects from Firebase');
@@ -187,7 +200,7 @@ const useDashboard = () => {
     try {
       // Create a properly structured project
       const projectToAdd = normalizeProject({
-        title: newProject.title,
+        title: newProject.title || newProject.name,
         description: newProject.description,
         color: newProject.color || 'blue',
         dueDate: newProject.dueDate ? newProject.dueDate : new Date()
@@ -202,6 +215,7 @@ const useDashboard = () => {
       };
       
       let createdProject;
+      
       // Try to create in Firebase
       if (projectAPI && projectAPI.createProject) {
         createdProject = await projectAPI.createProject(firebaseProject);
@@ -213,7 +227,7 @@ const useDashboard = () => {
           id: `local-${Date.now()}`
         };
         
-        // Add to local state
+        // Add to local state immediately
         const updatedProjects = [...projects, createdProject];
         setProjects(updatedProjects);
         
@@ -224,7 +238,7 @@ const useDashboard = () => {
       
       toast({
         title: "Project created",
-        description: `${newProject.title} has been created successfully`,
+        description: `${newProject.title || newProject.name} has been created successfully`,
       });
       
       return createdProject;
@@ -247,7 +261,8 @@ const useDashboard = () => {
     error,
     handleProjectClick,
     createProject,
-    deleteProject
+    deleteProject,
+    refreshProjects
   };
 };
 

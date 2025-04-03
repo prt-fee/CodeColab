@@ -1,22 +1,30 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useTaskManager } from '@/hooks/useTaskManager';
 import StatsCards from '@/components/dashboard/StatsCards';
 import ProjectsList from '@/components/dashboard/ProjectsList';
 import RecentTasks from '@/components/dashboard/RecentTasks';
 import useDashboard from '@/hooks/useDashboard';
+import { toast } from '@/hooks/use-toast';
 
 const DashboardContent = () => {
   const {
     projects,
     isLoading,
     handleProjectClick,
-    deleteProject
+    deleteProject,
+    createProject,
+    refreshProjects
   } = useDashboard();
 
   const { tasks } = useTaskManager();
 
+  // Refresh projects when component mounts
+  useEffect(() => {
+    refreshProjects();
+  }, [refreshProjects]);
+  
   // Calculate upcoming tasks (due in the next 7 days)
   const upcomingTasksCount = tasks.filter(task => {
     if (!task.dueDate) return false;
@@ -35,19 +43,30 @@ const DashboardContent = () => {
     );
   }
 
+  const handleCreateNewProject = () => {
+    // Redirect to projects page to create a new project
+    window.location.href = "/projects";
+  };
+
   return (
     <>
       <StatsCards 
-        projectsCount={projects.length}
+        projectsCount={Array.isArray(projects) ? projects.length : 0}
         tasksCount={tasks.length}
         upcomingTasksCount={upcomingTasksCount}
       />
       
       <ProjectsList 
         projects={projects}
-        onCreateClick={() => window.location.href = "/projects"}
+        onCreateClick={handleCreateNewProject}
         onProjectClick={handleProjectClick}
-        onDeleteProject={deleteProject}
+        onDeleteProject={(projectId) => {
+          deleteProject(projectId);
+          toast({
+            title: "Project deleted",
+            description: "Project has been removed successfully"
+          });
+        }}
       />
       
       <RecentTasks tasks={tasks} />
