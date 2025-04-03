@@ -6,13 +6,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2, AlertCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { createTestUser } from '@/services/authService';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   
@@ -23,15 +25,18 @@ const Login = () => {
     }
   }, [isAuthenticated, navigate]);
 
+  // Create test user if needed (for demonstration)
+  useEffect(() => {
+    // Uncomment this to create a test user automatically
+    // createTestUser();
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrorMsg('');
     
     if (!email || !password) {
-      toast({
-        title: "Error",
-        description: "Please fill in all fields",
-        variant: "destructive"
-      });
+      setErrorMsg("Please fill in all fields");
       return;
     }
     
@@ -41,6 +46,7 @@ const Login = () => {
       // We don't need to manually navigate here as the AuthContext will handle it
     } catch (error) {
       console.error("Login error:", error);
+      setErrorMsg(error.message || "Invalid credentials");
       toast({
         title: "Login failed",
         description: error.message || "Invalid credentials",
@@ -67,6 +73,13 @@ const Login = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {errorMsg && (
+            <div className="mb-4 p-3 bg-red-50 text-red-800 rounded-md flex items-start">
+              <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
+              <span>{errorMsg}</span>
+            </div>
+          )}
+          
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -113,7 +126,7 @@ const Login = () => {
             </Button>
           </form>
           
-          {/* Test account info - Remove in production */}
+          {/* Test account info */}
           <div className="mt-6 p-3 bg-muted rounded-md">
             <p className="text-xs text-muted-foreground mb-1">Test account:</p>
             <p className="text-xs text-muted-foreground">Email: test@example.com</p>

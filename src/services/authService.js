@@ -15,10 +15,12 @@ export const getUserData = async (firebaseUser) => {
   if (!firebaseUser) return null;
   
   try {
+    console.log("Getting user data for:", firebaseUser.uid);
     const userRef = ref(database, `users/${firebaseUser.uid}`);
     const snapshot = await get(userRef);
     
     if (snapshot.exists()) {
+      console.log("User data found in database");
       const userData = snapshot.val();
       return {
         id: firebaseUser.uid,
@@ -27,6 +29,7 @@ export const getUserData = async (firebaseUser) => {
         avatar: userData.avatar || firebaseUser.photoURL || 'https://randomuser.me/api/portraits/men/32.jpg'
       };
     } else {
+      console.log("User data not found, creating new entry");
       // Create user data if it doesn't exist in database
       const userDetails = {
         id: firebaseUser.uid,
@@ -41,7 +44,13 @@ export const getUserData = async (firebaseUser) => {
     }
   } catch (error) {
     console.error("Error getting user data:", error);
-    throw error;
+    // Return basic user info even if database operation fails
+    return {
+      id: firebaseUser.uid,
+      name: firebaseUser.displayName || firebaseUser.email.split('@')[0],
+      email: firebaseUser.email,
+      avatar: firebaseUser.photoURL || 'https://randomuser.me/api/portraits/men/32.jpg'
+    };
   }
 };
 
@@ -52,7 +61,19 @@ export const loginWithEmailPassword = async (email, password) => {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const firebaseUser = userCredential.user;
     console.log("Login successful for user:", firebaseUser.uid);
-    return await getUserData(firebaseUser);
+    
+    try {
+      return await getUserData(firebaseUser);
+    } catch (dbError) {
+      console.error('Error getting user data after login:', dbError);
+      // Fallback to basic user info if database fails
+      return {
+        id: firebaseUser.uid,
+        name: firebaseUser.displayName || email.split('@')[0],
+        email: firebaseUser.email,
+        avatar: firebaseUser.photoURL || 'https://randomuser.me/api/portraits/men/32.jpg'
+      };
+    }
   } catch (error) {
     console.error('Login error:', error);
     let message = "Login failed. Please check your credentials.";
@@ -64,6 +85,10 @@ export const loginWithEmailPassword = async (email, password) => {
       message = "Incorrect password. Please try again.";
     } else if (error.code === 'auth/too-many-requests') {
       message = "Too many failed login attempts. Please try again later.";
+    } else if (error.code === 'auth/user-disabled') {
+      message = "This account has been disabled. Please contact support.";
+    } else if (error.code === 'auth/network-request-failed') {
+      message = "Network error. Please check your connection and try again.";
     }
     const enhancedError = new Error(message);
     enhancedError.code = error.code;
@@ -93,9 +118,20 @@ export const registerWithEmailPassword = async (name, email, password) => {
       createdAt: new Date().toISOString()
     };
     
-    await set(userRef, userDetails);
-    console.log("Registration successful for user:", firebaseUser.uid);
-    return userDetails;
+    try {
+      await set(userRef, userDetails);
+      console.log("Registration successful for user:", firebaseUser.uid);
+      return userDetails;
+    } catch (dbError) {
+      console.error('Error saving user data after registration:', dbError);
+      // Return user info even if database save fails
+      return {
+        id: firebaseUser.uid,
+        name: name,
+        email: email,
+        avatar: 'https://randomuser.me/api/portraits/men/32.jpg'
+      };
+    }
   } catch (error) {
     console.error('Registration error:', error);
     let message = "Registration failed. Please try again.";
@@ -105,6 +141,8 @@ export const registerWithEmailPassword = async (name, email, password) => {
       message = "Invalid email address format.";
     } else if (error.code === 'auth/weak-password') {
       message = "Password is too weak. It should be at least 6 characters.";
+    } else if (error.code === 'auth/network-request-failed') {
+      message = "Network error. Please check your connection and try again.";
     }
     const enhancedError = new Error(message);
     enhancedError.code = error.code;
@@ -115,7 +153,9 @@ export const registerWithEmailPassword = async (name, email, password) => {
 // Sign out
 export const logoutUser = async () => {
   try {
+    console.log("Attempting logout");
     await signOut(auth);
+    console.log("Logout successful");
     return true;
   } catch (error) {
     console.error('Logout error:', error);
@@ -126,7 +166,9 @@ export const logoutUser = async () => {
 // Send password reset email
 export const sendPasswordReset = async (email) => {
   try {
+    console.log("Sending password reset email to:", email);
     await sendPasswordResetEmail(auth, email);
+    console.log("Password reset email sent successfully");
     return true;
   } catch (error) {
     console.error('Password reset error:', error);
@@ -135,6 +177,8 @@ export const sendPasswordReset = async (email) => {
       message = "No account found with this email.";
     } else if (error.code === 'auth/invalid-email') {
       message = "Invalid email address format.";
+    } else if (error.code === 'auth/too-many-requests') {
+      message = "Too many requests. Please try again later.";
     }
     const enhancedError = new Error(message);
     enhancedError.code = error.code;
@@ -145,6 +189,7 @@ export const sendPasswordReset = async (email) => {
 // Update user profile
 export const updateUserProfile = async (userId, userData) => {
   try {
+    console.log("Updating profile for user:", userId);
     const userRef = ref(database, `users/${userId}`);
     await update(userRef, userData);
     
@@ -162,6 +207,7 @@ export const updateUserProfile = async (userId, userData) => {
       });
     }
     
+    console.log("Profile updated successfully");
     return true;
   } catch (error) {
     console.error('Profile update error:', error);
@@ -171,5 +217,54 @@ export const updateUserProfile = async (userId, userData) => {
 
 // Listen to auth state changes
 export const subscribeToAuthChanges = (callback) => {
+  console.log("Setting up auth state listener");
   return onAuthStateChanged(auth, callback);
+};
+
+// Create a test user for demonstration purposes
+export const createTestUser = async () => {
+  const testEmail = "test@example.com";
+  const testPassword = "password123";
+  const testName = "Test User";
+  
+  try {
+    // Check if user already exists
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, testEmail, testPassword);
+      console.log("Test user already exists, signing out");
+      await signOut(auth);
+      return;
+    } catch (error) {
+      if (error.code !== 'auth/user-not-found') {
+        console.log("Test user exists but can't sign in, creating new test user");
+      }
+    }
+    
+    // Create the test user
+    const userCredential = await createUserWithEmailAndPassword(auth, testEmail, testPassword);
+    const firebaseUser = userCredential.user;
+    
+    // Update profile
+    await updateProfile(firebaseUser, {
+      displayName: testName
+    });
+    
+    // Save in database
+    const userRef = ref(database, `users/${firebaseUser.uid}`);
+    const userDetails = {
+      id: firebaseUser.uid,
+      name: testName,
+      email: testEmail,
+      avatar: 'https://randomuser.me/api/portraits/men/1.jpg',
+      createdAt: new Date().toISOString()
+    };
+    
+    await set(userRef, userDetails);
+    console.log("Test user created successfully");
+    
+    // Sign out after creating
+    await signOut(auth);
+  } catch (error) {
+    console.error("Error creating test user:", error);
+  }
 };

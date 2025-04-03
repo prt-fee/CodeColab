@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2, AlertCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
 
 const Register = () => {
   const [name, setName] = useState('');
@@ -15,6 +15,7 @@ const Register = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
   const { register, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   
@@ -27,42 +28,35 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrorMsg('');
     
-    // Validation
     if (!name || !email || !password || !confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Please fill in all fields",
-        variant: "destructive"
-      });
+      setErrorMsg("Please fill in all fields");
       return;
     }
     
     if (password !== confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Passwords do not match",
-        variant: "destructive"
-      });
+      setErrorMsg("Passwords do not match");
       return;
     }
     
     if (password.length < 6) {
-      toast({
-        title: "Error",
-        description: "Password should be at least 6 characters",
-        variant: "destructive"
-      });
+      setErrorMsg("Password must be at least 6 characters");
       return;
     }
     
     try {
       setIsSubmitting(true);
       await register(name, email, password);
-      // Navigation is handled in the AuthContext
+      // We don't need to manually navigate here as the AuthContext will handle it
     } catch (error) {
       console.error("Registration error:", error);
-      // Toast is handled in AuthContext
+      setErrorMsg(error.message || "Could not create account");
+      toast({
+        title: "Registration failed",
+        description: error.message || "Could not create account",
+        variant: "destructive"
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -80,10 +74,17 @@ const Register = () => {
           </div>
           <CardTitle className="text-2xl font-bold text-center">Create an account</CardTitle>
           <CardDescription className="text-center">
-            Enter your information to create your account
+            Enter your details to create your account
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {errorMsg && (
+            <div className="mb-4 p-3 bg-red-50 text-red-800 rounded-md flex items-start">
+              <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
+              <span>{errorMsg}</span>
+            </div>
+          )}
+          
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Name</Label>
@@ -119,9 +120,6 @@ const Register = () => {
                 required
                 disabled={isSubmitting}
               />
-              <p className="text-xs text-muted-foreground">
-                Password must be at least 6 characters long
-              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirm Password</Label>

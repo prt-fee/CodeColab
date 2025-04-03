@@ -30,9 +30,22 @@ export const AuthProvider = ({ children }) => {
       try {
         if (firebaseUser) {
           console.log("AuthProvider: User is logged in:", firebaseUser.uid);
-          const userDetails = await getUserData(firebaseUser);
-          setUser(userDetails);
-          saveUser(userDetails);
+          try {
+            const userDetails = await getUserData(firebaseUser);
+            setUser(userDetails);
+            saveUser(userDetails);
+          } catch (dataError) {
+            console.error("Error getting user data:", dataError);
+            // Fallback to basic user info
+            const basicUserInfo = {
+              id: firebaseUser.uid,
+              name: firebaseUser.displayName || firebaseUser.email.split('@')[0],
+              email: firebaseUser.email,
+              avatar: firebaseUser.photoURL || 'https://randomuser.me/api/portraits/men/32.jpg'
+            };
+            setUser(basicUserInfo);
+            saveUser(basicUserInfo);
+          }
         } else {
           console.log("AuthProvider: No user logged in");
           setUser(null);
