@@ -10,7 +10,6 @@ import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
-import "./services/firebase"; // Import Firebase to ensure initialization
 
 const queryClient = new QueryClient();
 

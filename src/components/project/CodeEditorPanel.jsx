@@ -1,10 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Save, Code, Upload, FolderPlus, FileUp, Users, Lock, Clock } from 'lucide-react';
-import { Controlled as CodeMirror } from 'react-codemirror2';
-import 'codemirror/lib/codemirror.css';
+import CodeMirror from '@uiw/react-codemirror';
 import 'codemirror/theme/material.css';
 import 'codemirror/theme/eclipse.css';
 import 'codemirror/mode/javascript/javascript';
@@ -148,23 +146,20 @@ const CodeEditor = ({ file, onSave, collaborators }) => {
       <div className="border rounded-md overflow-hidden">
         <CodeMirror
           value={content}
-          options={{
-            mode: getLanguage(file?.type),
-            theme: theme,
-            lineNumbers: true,
-            lineWrapping: true,
-            foldGutter: true,
-            gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
-            extraKeys: {"Ctrl-Space": "autocomplete"},
-            indentWithTabs: true,
-            indentUnit: 2,
-            readOnly: activeEditor && !isFileLocked ? true : false,
-          }}
-          onBeforeChange={(editor, data, value) => {
+          extensions={[getLanguage(file?.type)]}
+          theme={theme}
+          onChange={(value) => {
             if (!activeEditor || isFileLocked) {
               setContent(value);
             }
           }}
+          basicSetup={{
+            lineNumbers: true,
+            lineWrapping: true,
+            foldGutter: true,
+            indentOnInput: true,
+          }}
+          readOnly={activeEditor && !isFileLocked}
         />
       </div>
     </div>
