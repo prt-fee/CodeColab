@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '@/services/firebaseAPI';
@@ -53,7 +52,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     initAuth();
-  }, [getUser, saveUser]);
+  }, []);
 
   const login = async (email, password) => {
     try {

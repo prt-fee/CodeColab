@@ -35,8 +35,10 @@ try {
   }
   
   // Use emulators if in development and the environment variables are set
-  if (import.meta.env.DEV) {
-    if (import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true') {
+  const isDev = import.meta.env && import.meta.env.DEV;
+  if (isDev) {
+    const useEmulator = import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true';
+    if (useEmulator) {
       try {
         const { connectAuthEmulator } = require('firebase/auth');
         const { connectDatabaseEmulator } = require('firebase/database');
