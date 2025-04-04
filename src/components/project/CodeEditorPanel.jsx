@@ -1,14 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Save, Code, Upload, FolderPlus, FileUp, Users, Lock, Clock } from 'lucide-react';
-import CodeMirror from '@uiw/react-codemirror';
-import 'codemirror/theme/material.css';
-import 'codemirror/theme/eclipse.css';
-import 'codemirror/mode/javascript/javascript';
-import 'codemirror/mode/htmlmixed/htmlmixed';
-import 'codemirror/mode/css/css';
-import 'codemirror/mode/markdown/markdown';
+import Editor from '@monaco-editor/react';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -17,7 +12,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 const CodeEditor = ({ file, onSave, collaborators }) => {
   const { user } = useAuth();
   const [content, setContent] = useState(file?.content || '');
-  const [theme, setTheme] = useState('eclipse');
+  const [theme, setTheme] = useState('light');
   const [isFileLocked, setIsFileLocked] = useState(false);
   const [activeEditor, setActiveEditor] = useState(null);
   const [lastEdited, setLastEdited] = useState(null);
@@ -59,9 +54,13 @@ const CodeEditor = ({ file, onSave, collaborators }) => {
   const getLanguage = (fileType) => {
     switch (fileType) {
       case 'js': return 'javascript';
+      case 'jsx': return 'javascript';
+      case 'ts': return 'typescript';
+      case 'tsx': return 'typescript';
       case 'css': return 'css';
-      case 'html': return 'htmlmixed';
+      case 'html': return 'html';
       case 'md': return 'markdown';
+      case 'json': return 'json';
       default: return 'javascript';
     }
   };
@@ -111,8 +110,8 @@ const CodeEditor = ({ file, onSave, collaborators }) => {
             value={theme}
             onChange={(e) => setTheme(e.target.value)}
           >
-            <option value="eclipse">Light Theme</option>
-            <option value="material">Dark Theme</option>
+            <option value="light">Light Theme</option>
+            <option value="vs-dark">Dark Theme</option>
           </select>
           
           <TooltipProvider>
@@ -144,22 +143,23 @@ const CodeEditor = ({ file, onSave, collaborators }) => {
       )}
       
       <div className="border rounded-md overflow-hidden">
-        <CodeMirror
-          value={content}
-          extensions={[getLanguage(file?.type)]}
+        <Editor
+          height="400px"
+          language={getLanguage(file?.type)}
           theme={theme}
+          value={content}
           onChange={(value) => {
             if (!activeEditor || isFileLocked) {
               setContent(value);
             }
           }}
-          basicSetup={{
-            lineNumbers: true,
-            lineWrapping: true,
-            foldGutter: true,
-            indentOnInput: true,
+          options={{
+            minimap: { enabled: false },
+            readOnly: activeEditor && !isFileLocked,
+            scrollBeyondLastLine: false,
+            fontSize: 14,
+            wordWrap: 'on',
           }}
-          readOnly={activeEditor && !isFileLocked}
         />
       </div>
     </div>
