@@ -1,11 +1,14 @@
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '@/services/firebaseAPI';
 import useLocalStorage from '@/hooks/useLocalStorage';
 import { showSuccessToast, showErrorToast } from '@/services/toastService';
 
+// Create context
 const AuthContext = createContext(null);
 
+// AuthProvider component must be used within a component wrapped with Router
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
