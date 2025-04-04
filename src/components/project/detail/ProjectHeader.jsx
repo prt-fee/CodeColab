@@ -27,14 +27,14 @@ const ProjectHeader = ({
       
       <div className="flex flex-col md:flex-row justify-between mb-6 gap-4">
         <div>
-          <h1 className="text-3xl font-bold mb-2">{project.title}</h1>
-          <p className="text-muted-foreground">{project.description}</p>
+          <h1 className="text-3xl font-bold mb-2">{project?.title || 'Project'}</h1>
+          <p className="text-muted-foreground">{project?.description || 'No description'}</p>
         </div>
         
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <CalendarDays className="h-5 w-5 text-muted-foreground" />
-            <span>Due: {formatDate(project.dueDate)}</span>
+            <span>Due: {formatDate(project?.dueDate)}</span>
           </div>
           
           <Button variant="outline" size="sm" className="gap-2" onClick={onTeamClick}>
