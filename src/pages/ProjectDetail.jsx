@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import NavBar from '@/components/NavBar';
 import { toast } from '@/hooks/use-toast';
@@ -11,6 +11,8 @@ import { ProjectDetailLoading, ProjectNotFound } from '@/components/project/Proj
 import ProjectHeader from '@/components/project/detail/ProjectHeader';
 import TeamMembersSheet from '@/components/project/detail/TeamMembersSheet';
 import DeleteProjectDialog from '@/components/project/detail/DeleteProjectDialog';
+import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 // Mock users for search feature
 const MOCK_USERS = [
@@ -27,10 +29,23 @@ const ProjectDetail = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [teamSheetOpen, setTeamSheetOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const { isAuthenticated, loading: authLoading } = useAuth();
   
   // Extract the projectId from the URL params for clarity
   const projectId = id;
   
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to view project details",
+        variant: "destructive"
+      });
+      navigate('/login');
+    }
+  }, [isAuthenticated, authLoading, navigate]);
+
   const {
     project,
     isLoading,
@@ -138,8 +153,15 @@ const ProjectDetail = () => {
   const confirmDeleteProject = () => {
     handleDeleteProject();
     setDeleteDialogOpen(false);
-    navigate('/dashboard');
   };
+  
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (isLoading) {
     return <ProjectDetailLoading onGoBack={handleGoBack} />;

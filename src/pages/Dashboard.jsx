@@ -15,14 +15,17 @@ const Dashboard = () => {
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!loading && !isAuthenticated) {
+      console.log("User not authenticated, redirecting to login");
       toast({
         title: "Authentication required",
         description: "Please log in to access the dashboard",
         variant: "destructive"
       });
       navigate('/login');
+    } else {
+      console.log("User authenticated:", user?.id);
     }
-  }, [isAuthenticated, loading, navigate]);
+  }, [isAuthenticated, loading, navigate, user]);
 
   // Show loading state while checking authentication
   if (loading) {

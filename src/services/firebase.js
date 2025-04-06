@@ -33,26 +33,6 @@ try {
   } else {
     console.log("Firebase initialized successfully without analytics (server environment)");
   }
-  
-  // Use emulators if in development and the environment variables are set
-  const isDev = import.meta.env && import.meta.env.DEV;
-  if (isDev) {
-    const useEmulator = import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true';
-    if (useEmulator) {
-      try {
-        const { connectAuthEmulator } = require('firebase/auth');
-        const { connectDatabaseEmulator } = require('firebase/database');
-        const { connectStorageEmulator } = require('firebase/storage');
-        
-        connectAuthEmulator(auth, 'http://localhost:9099');
-        connectDatabaseEmulator(database, 'localhost', 9000);
-        connectStorageEmulator(storage, 'localhost', 9199);
-        console.log("Connected to Firebase emulators");
-      } catch (emulatorError) {
-        console.error("Failed to connect to Firebase emulators:", emulatorError);
-      }
-    }
-  }
 } catch (error) {
   console.error("Error initializing Firebase:", error);
   

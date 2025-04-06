@@ -7,6 +7,7 @@ import Features from '@/components/Features';
 import Testimonials from '@/components/Testimonials';
 import Footer from '@/components/Footer';
 import NavBar from '@/components/NavBar';
+import { Loader2 } from 'lucide-react';
 
 const Index = () => {
   const { isAuthenticated, user, loading } = useAuth();
@@ -16,6 +17,7 @@ const Index = () => {
     // If the user is already authenticated, redirect to dashboard
     // But only after we've confirmed loading is complete
     if (!loading && isAuthenticated && user) {
+      console.log("User is authenticated, redirecting to dashboard");
       navigate('/dashboard');
     }
   }, [isAuthenticated, user, loading, navigate]);
@@ -23,7 +25,7 @@ const Index = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }

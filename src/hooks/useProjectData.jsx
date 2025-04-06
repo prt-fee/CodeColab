@@ -13,115 +13,115 @@ const useProjectData = (projectId) => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
+  // Format project dates
+  const formatProjectDates = useCallback((projectData) => {
+    const formattedProject = {
+      ...projectData,
+      id: projectId,
+      dueDate: projectData.dueDate ? new Date(projectData.dueDate) : new Date(),
+    };
+    
+    // Format meeting dates
+    if (formattedProject.meetings) {
+      formattedProject.meetings = formattedProject.meetings.map(meeting => ({
+        ...meeting,
+        date: meeting.date ? new Date(meeting.date) : new Date()
+      }));
+    }
+    
+    // Format commit dates
+    if (formattedProject.commits) {
+      formattedProject.commits = formattedProject.commits.map(commit => ({
+        ...commit,
+        date: commit.date ? new Date(commit.date) : new Date()
+      }));
+    }
+    
+    // Ensure required arrays exist
+    if (!formattedProject.files) formattedProject.files = [];
+    if (!formattedProject.meetings) formattedProject.meetings = [];
+    if (!formattedProject.commits) formattedProject.commits = [];
+    if (!formattedProject.pullRequests) formattedProject.pullRequests = [];
+    if (!formattedProject.collaborators) formattedProject.collaborators = [];
+    if (!formattedProject.collaborationActivity) formattedProject.collaborationActivity = [];
+    if (!formattedProject.members) formattedProject.members = [];
+    
+    return formattedProject;
+  }, [projectId]);
+
+  // Save project to localStorage
+  const saveToLocalStorage = useCallback((projectData) => {
+    try {
+      const savedProjects = localStorage.getItem('user_projects') || '[]';
+      const projects = JSON.parse(savedProjects);
+      const updatedProjects = projects.map(p => 
+        p.id === projectId ? projectData : p
+      );
+      
+      // If project doesn't exist in array, add it
+      if (!projects.some(p => p.id === projectId)) {
+        updatedProjects.push(projectData);
+      }
+      
+      localStorage.setItem('user_projects', JSON.stringify(updatedProjects));
+      console.log("Project saved to localStorage");
+    } catch (e) {
+      console.error('Failed to save project to localStorage:', e);
+    }
+  }, [projectId]);
+
+  // Load project from localStorage or mock data
+  const loadFromLocalStorage = useCallback(() => {
+    console.log("Attempting to load project from localStorage");
+    const savedProjects = localStorage.getItem('user_projects');
+    if (savedProjects) {
+      try {
+        const projects = JSON.parse(savedProjects);
+        if (Array.isArray(projects)) {
+          const foundProject = projects.find(p => p.id === projectId);
+          if (foundProject) {
+            console.log("Found project in localStorage:", foundProject);
+            const formattedProject = formatProjectDates(foundProject);
+            setProject(formattedProject);
+            setIsLoading(false);
+            setError(null);
+            return formattedProject;
+          }
+        }
+      } catch (e) {
+        console.error('Failed to parse saved projects:', e);
+      }
+    }
+
+    // If no match in localStorage, check mock projects
+    console.log("No project found in localStorage, trying mock data");
+    const foundMockProject = mockProjects.find(p => p.id === projectId);
+    if (foundMockProject) {
+      console.log("Using mock project data:", foundMockProject);
+      const formattedProject = formatProjectDates(foundMockProject);
+      setProject(formattedProject);
+      setError(null);
+      setIsLoading(false);
+      return formattedProject;
+    } else {
+      // No project found anywhere
+      console.error("Project not found anywhere");
+      setError("Project not found");
+      toast({
+        title: "Project not found",
+        description: "The requested project could not be found",
+        variant: "destructive"
+      });
+      setIsLoading(false);
+      return null;
+    }
+  }, [projectId, formatProjectDates]);
+
   // Load project data
   useEffect(() => {
     if (!projectId) return;
     
     setIsLoading(true);
-    
-    // Function to format dates in project data
-    const formatProjectDates = (projectData) => {
-      const formattedProject = {
-        ...projectData,
-        id: projectId,
-        dueDate: projectData.dueDate ? new Date(projectData.dueDate) : new Date(),
-      };
-      
-      // Format meeting dates
-      if (formattedProject.meetings) {
-        formattedProject.meetings = formattedProject.meetings.map(meeting => ({
-          ...meeting,
-          date: meeting.date ? new Date(meeting.date) : new Date()
-        }));
-      }
-      
-      // Format commit dates
-      if (formattedProject.commits) {
-        formattedProject.commits = formattedProject.commits.map(commit => ({
-          ...commit,
-          date: commit.date ? new Date(commit.date) : new Date()
-        }));
-      }
-      
-      // Ensure required arrays exist
-      if (!formattedProject.files) formattedProject.files = [];
-      if (!formattedProject.meetings) formattedProject.meetings = [];
-      if (!formattedProject.commits) formattedProject.commits = [];
-      if (!formattedProject.pullRequests) formattedProject.pullRequests = [];
-      if (!formattedProject.collaborators) formattedProject.collaborators = [];
-      if (!formattedProject.collaborationActivity) formattedProject.collaborationActivity = [];
-      if (!formattedProject.members) formattedProject.members = [];
-      
-      return formattedProject;
-    };
-    
-    // Save project to localStorage for backup
-    const saveToLocalStorage = (projectData) => {
-      try {
-        const savedProjects = localStorage.getItem('user_projects') || '[]';
-        const projects = JSON.parse(savedProjects);
-        const updatedProjects = projects.map(p => 
-          p.id === projectId ? projectData : p
-        );
-        
-        // If project doesn't exist in array, add it
-        if (!projects.some(p => p.id === projectId)) {
-          updatedProjects.push(projectData);
-        }
-        
-        localStorage.setItem('user_projects', JSON.stringify(updatedProjects));
-        console.log("Project saved to localStorage");
-      } catch (e) {
-        console.error('Failed to save project to localStorage:', e);
-      }
-    };
-    
-    // Load project from localStorage
-    const loadFromLocalStorage = () => {
-      console.log("Attempting to load project from localStorage");
-      const savedProjects = localStorage.getItem('user_projects');
-      if (savedProjects) {
-        try {
-          const projects = JSON.parse(savedProjects);
-          if (Array.isArray(projects)) {
-            const foundProject = projects.find(p => p.id === projectId);
-            if (foundProject) {
-              console.log("Found project in localStorage:", foundProject);
-              const formattedProject = formatProjectDates(foundProject);
-              setProject(formattedProject);
-              setIsLoading(false);
-              setError(null);
-              return formattedProject;
-            }
-          }
-        } catch (e) {
-          console.error('Failed to parse saved projects:', e);
-        }
-      }
-
-      // If no match in localStorage, check mock projects
-      console.log("No project found in localStorage, trying mock data");
-      const foundMockProject = mockProjects.find(p => p.id === projectId);
-      if (foundMockProject) {
-        console.log("Using mock project data:", foundMockProject);
-        const formattedProject = formatProjectDates(foundMockProject);
-        setProject(formattedProject);
-        setError(null);
-        setIsLoading(false);
-        return formattedProject;
-      } else {
-        // No project found anywhere
-        console.error("Project not found anywhere");
-        setError("Project not found");
-        toast({
-          title: "Project not found",
-          description: "The requested project could not be found",
-          variant: "destructive"
-        });
-        setIsLoading(false);
-        return null;
-      }
-    };
     
     // Main function to load project data
     const loadProjectData = () => {
@@ -174,7 +174,7 @@ const useProjectData = (projectId) => {
         unsubscribe();
       }
     };
-  }, [projectId, auth.currentUser?.uid]);
+  }, [projectId, auth.currentUser?.uid, formatProjectDates, loadFromLocalStorage, saveToLocalStorage]);
 
   // Save project changes
   const saveProjectChanges = useCallback(async (updatedProject) => {
@@ -239,11 +239,81 @@ const useProjectData = (projectId) => {
       // Continue using the current project state
       return project;
     }
-  }, [projectId, project]);
+  }, [projectId, project, saveToLocalStorage]);
+
+  // Handle delete project
+  const handleDeleteProject = useCallback(async () => {
+    try {
+      if (!projectId) {
+        toast({
+          title: "Error",
+          description: "Project ID is required",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      setIsLoading(true);
+      
+      // Try to delete from Firebase if user is authenticated
+      if (auth.currentUser && projectAPI && projectAPI.deleteProject) {
+        try {
+          await projectAPI.deleteProject(projectId);
+          console.log("Project deleted from Firebase");
+        } catch (firebaseError) {
+          console.error("Failed to delete from Firebase:", firebaseError);
+        }
+      }
+      
+      // Remove from localStorage
+      try {
+        const savedProjects = localStorage.getItem('user_projects') || '[]';
+        const projects = JSON.parse(savedProjects);
+        const updatedProjects = projects.filter(p => p.id !== projectId);
+        localStorage.setItem('user_projects', JSON.stringify(updatedProjects));
+        console.log("Project removed from localStorage");
+      } catch (e) {
+        console.error('Failed to remove project from localStorage:', e);
+      }
+      
+      toast({
+        title: "Project deleted",
+        description: "The project has been successfully deleted",
+      });
+      
+      // Navigate back to projects
+      navigate('/projects');
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete project",
+        variant: "destructive"
+      });
+      setIsLoading(false);
+    }
+  }, [projectId, navigate]);
+
+  // Handle delete meeting
+  const handleDeleteMeeting = useCallback((meetingId) => {
+    if (!project || !meetingId) return;
+    
+    const updatedProject = {
+      ...project,
+      meetings: project.meetings.filter(meeting => meeting.id !== meetingId)
+    };
+    
+    saveProjectChanges(updatedProject);
+    
+    toast({
+      title: "Meeting deleted",
+      description: "The meeting has been removed from the project"
+    });
+  }, [project, saveProjectChanges]);
 
   // Navigate back to dashboard
   const handleGoBack = useCallback(() => {
-    navigate('/dashboard');
+    navigate('/projects');
   }, [navigate]);
 
   return {
@@ -251,6 +321,8 @@ const useProjectData = (projectId) => {
     isLoading,
     error,
     saveProjectChanges,
+    handleDeleteProject,
+    handleDeleteMeeting,
     handleGoBack
   };
 };

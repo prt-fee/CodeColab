@@ -1,13 +1,14 @@
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '@/services/firebaseAPI';
 import useLocalStorage from '@/hooks/useLocalStorage';
-import { showSuccessToast, showErrorToast } from '@/services/toastService';
+import { toast } from '@/hooks/use-toast';
 
 // Create context
 const AuthContext = createContext(null);
 
-// AuthProvider component must be used within a component wrapped with Router
+// AuthProvider component
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -62,13 +63,20 @@ export const AuthProvider = ({ children }) => {
       setUser(user);
       saveUser(user);
       
-      showSuccessToast('Login Successful', 'Welcome back!');
+      toast({
+        title: 'Login Successful',
+        description: 'Welcome back!',
+      });
       navigate('/dashboard');
       
       return user;
     } catch (error) {
       console.error('Login error:', error);
-      showErrorToast('Login Failed', error.message || 'Please check your credentials');
+      toast({
+        title: 'Login Failed',
+        description: error.message || 'Please check your credentials',
+        variant: "destructive"
+      });
       throw error;
     } finally {
       setLoading(false);
@@ -83,13 +91,20 @@ export const AuthProvider = ({ children }) => {
       setUser(user);
       saveUser(user);
       
-      showSuccessToast('Registration Successful', 'Your account has been created');
+      toast({
+        title: 'Registration Successful',
+        description: 'Your account has been created',
+      });
       navigate('/dashboard');
       
       return user;
     } catch (error) {
       console.error('Registration error:', error);
-      showErrorToast('Registration Failed', error.message || 'Please check your information');
+      toast({
+        title: 'Registration Failed',
+        description: error.message || 'Please check your information',
+        variant: "destructive"
+      });
       throw error;
     } finally {
       setLoading(false);
@@ -104,11 +119,18 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
       clearAllData(); // Clear all localStorage data on logout
       
-      showSuccessToast('Logout Successful', 'You have been logged out');
+      toast({
+        title: 'Logout Successful',
+        description: 'You have been logged out',
+      });
       navigate('/login');
     } catch (error) {
       console.error('Logout error:', error);
-      showErrorToast('Logout Failed', error.message || 'Please try again');
+      toast({
+        title: 'Logout Failed',
+        description: error.message || 'Please try again',
+        variant: "destructive"
+      });
       throw error;
     } finally {
       setLoading(false);
@@ -122,11 +144,18 @@ export const AuthProvider = ({ children }) => {
       setUser(prev => ({ ...prev, ...profileData }));
       saveUser({ ...user, ...profileData });
       
-      showSuccessToast('Profile Updated', 'Your profile has been updated successfully');
+      toast({
+        title: 'Profile Updated',
+        description: 'Your profile has been updated successfully',
+      });
       return { ...user, ...profileData };
     } catch (error) {
       console.error('Update profile error:', error);
-      showErrorToast('Update Failed', error.message || 'Please try again');
+      toast({
+        title: 'Update Failed',
+        description: error.message || 'Please try again',
+        variant: "destructive"
+      });
       throw error;
     }
   };

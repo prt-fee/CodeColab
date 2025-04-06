@@ -39,6 +39,7 @@ const Projects = () => {
   // Check authentication and redirect if needed
   useEffect(() => {
     if (!loading && !isAuthenticated) {
+      console.log("Not authenticated, redirecting to login");
       toast({
         title: "Authentication required",
         description: "Please log in to view projects",
