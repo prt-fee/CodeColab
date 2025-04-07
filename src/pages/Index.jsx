@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import Hero from '@/components/Hero';
@@ -8,23 +8,32 @@ import Testimonials from '@/components/Testimonials';
 import Footer from '@/components/Footer';
 import NavBar from '@/components/NavBar';
 import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const Index = () => {
   const { isAuthenticated, user, loading } = useAuth();
   const navigate = useNavigate();
+  const [redirecting, setRedirecting] = useState(false);
 
   useEffect(() => {
     // If the user is already authenticated, redirect to dashboard
     // But only after we've confirmed loading is complete
     if (!loading && isAuthenticated && user) {
       console.log("User is authenticated, redirecting to dashboard");
-      navigate('/dashboard');
+      setRedirecting(true);
+      
+      // Short timeout to ensure smooth transition
+      const timer = setTimeout(() => {
+        navigate('/dashboard');
+      }, 300);
+      
+      return () => clearTimeout(timer);
     }
   }, [isAuthenticated, user, loading, navigate]);
 
-  if (loading) {
+  if (loading || redirecting) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
@@ -46,12 +55,12 @@ const Index = () => {
           <p className="text-primary-foreground/90 text-lg max-w-2xl mx-auto mb-8">
             Join thousands of teams that use ProjectHub to collaborate more effectively and deliver projects on time.
           </p>
-          <button 
+          <Button 
             onClick={() => navigate('/register')}
             className="bg-white text-primary font-medium px-6 py-3 rounded-lg hover:bg-primary-foreground/90 transition-colors"
           >
             Get Started Free
-          </button>
+          </Button>
         </div>
       </section>
       

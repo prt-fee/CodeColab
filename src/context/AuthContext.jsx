@@ -1,5 +1,5 @@
 
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '@/services/firebaseAPI';
 import useLocalStorage from '@/hooks/useLocalStorage';
@@ -12,22 +12,25 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
   const navigate = useNavigate();
   const { saveUser, getUser, clearAllData } = useLocalStorage();
 
   // Load user from localStorage first, then check Firebase auth status
   useEffect(() => {
     const initAuth = async () => {
+      if (initialized) return; // Prevent multiple initializations
+      
       setLoading(true);
       
-      // First try to load from localStorage for immediate UI feedback
-      const localUser = getUser();
-      if (localUser) {
-        console.log('User found in localStorage:', localUser.id);
-        setUser(localUser);
-      }
-      
       try {
+        // First try to load from localStorage for immediate UI feedback
+        const localUser = getUser();
+        if (localUser) {
+          console.log('User found in localStorage:', localUser.id);
+          setUser(localUser);
+        }
+        
         // Then check Firebase auth status
         const currentUser = await authAPI.getCurrentUser();
         
@@ -49,13 +52,14 @@ export const AuthProvider = ({ children }) => {
         // Keep using localStorage user if Firebase check fails
       } finally {
         setLoading(false);
+        setInitialized(true);
       }
     };
 
     initAuth();
   }, []);
 
-  const login = async (email, password) => {
+  const login = useCallback(async (email, password) => {
     try {
       setLoading(true);
       const user = await authAPI.login({ email, password });
@@ -81,9 +85,9 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate, saveUser]);
 
-  const register = async (userData) => {
+  const register = useCallback(async (userData) => {
     try {
       setLoading(true);
       const user = await authAPI.register(userData);
@@ -109,9 +113,9 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate, saveUser]);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       setLoading(true);
       await authAPI.logout();
@@ -135,9 +139,9 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [clearAllData, navigate]);
 
-  const updateUserProfile = async (profileData) => {
+  const updateUserProfile = useCallback(async (profileData) => {
     try {
       // Update user profile here
       // For now, just update the local state
@@ -158,18 +162,21 @@ export const AuthProvider = ({ children }) => {
       });
       throw error;
     }
-  };
+  }, [user, saveUser]);
+
+  // Memoize context value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => ({
+    user, 
+    loading, 
+    isAuthenticated: !!user,
+    login, 
+    register, 
+    logout,
+    updateUserProfile
+  }), [user, loading, login, register, logout, updateUserProfile]);
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      loading, 
-      isAuthenticated: !!user,
-      login, 
-      register, 
-      logout,
-      updateUserProfile
-    }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

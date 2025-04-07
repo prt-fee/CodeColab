@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import NavBar from '@/components/NavBar';
@@ -10,25 +10,27 @@ import { toast } from '@/hooks/use-toast';
 
 const Dashboard = () => {
   const { user, loading, isAuthenticated } = useAuth();
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const navigate = useNavigate();
 
   // Redirect to login if not authenticated
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
+    if (!loading && !isAuthenticated && !isRedirecting) {
       console.log("User not authenticated, redirecting to login");
+      setIsRedirecting(true);
       toast({
         title: "Authentication required",
         description: "Please log in to access the dashboard",
         variant: "destructive"
       });
       navigate('/login');
-    } else {
+    } else if (isAuthenticated) {
       console.log("User authenticated:", user?.id);
     }
-  }, [isAuthenticated, loading, navigate, user]);
+  }, [isAuthenticated, loading, navigate, user, isRedirecting]);
 
   // Show loading state while checking authentication
-  if (loading) {
+  if (loading || isRedirecting) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />

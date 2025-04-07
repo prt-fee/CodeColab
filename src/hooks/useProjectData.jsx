@@ -15,36 +15,26 @@ const useProjectData = (projectId) => {
 
   // Format project dates
   const formatProjectDates = useCallback((projectData) => {
+    if (!projectData) return null;
+    
     const formattedProject = {
       ...projectData,
       id: projectId,
       dueDate: projectData.dueDate ? new Date(projectData.dueDate) : new Date(),
-    };
-    
-    // Format meeting dates
-    if (formattedProject.meetings) {
-      formattedProject.meetings = formattedProject.meetings.map(meeting => ({
+      meetings: Array.isArray(projectData.meetings) ? projectData.meetings.map(meeting => ({
         ...meeting,
         date: meeting.date ? new Date(meeting.date) : new Date()
-      }));
-    }
-    
-    // Format commit dates
-    if (formattedProject.commits) {
-      formattedProject.commits = formattedProject.commits.map(commit => ({
+      })) : [],
+      commits: Array.isArray(projectData.commits) ? projectData.commits.map(commit => ({
         ...commit,
         date: commit.date ? new Date(commit.date) : new Date()
-      }));
-    }
-    
-    // Ensure required arrays exist
-    if (!formattedProject.files) formattedProject.files = [];
-    if (!formattedProject.meetings) formattedProject.meetings = [];
-    if (!formattedProject.commits) formattedProject.commits = [];
-    if (!formattedProject.pullRequests) formattedProject.pullRequests = [];
-    if (!formattedProject.collaborators) formattedProject.collaborators = [];
-    if (!formattedProject.collaborationActivity) formattedProject.collaborationActivity = [];
-    if (!formattedProject.members) formattedProject.members = [];
+      })) : [],
+      files: Array.isArray(projectData.files) ? projectData.files : [],
+      pullRequests: Array.isArray(projectData.pullRequests) ? projectData.pullRequests : [],
+      collaborators: Array.isArray(projectData.collaborators) ? projectData.collaborators : [],
+      collaborationActivity: Array.isArray(projectData.collaborationActivity) ? projectData.collaborationActivity : [],
+      members: Array.isArray(projectData.members) ? projectData.members : [],
+    };
     
     return formattedProject;
   }, [projectId]);
@@ -52,16 +42,21 @@ const useProjectData = (projectId) => {
   // Save project to localStorage
   const saveToLocalStorage = useCallback((projectData) => {
     try {
-      const savedProjects = localStorage.getItem('user_projects') || '[]';
-      const projects = JSON.parse(savedProjects);
-      const updatedProjects = projects.map(p => 
-        p.id === projectId ? projectData : p
-      );
+      if (!projectData || !projectId) return;
       
-      // If project doesn't exist in array, add it
-      if (!projects.some(p => p.id === projectId)) {
-        updatedProjects.push(projectData);
+      const savedProjects = localStorage.getItem('user_projects') || '[]';
+      let projects = [];
+      
+      try {
+        projects = JSON.parse(savedProjects);
+        if (!Array.isArray(projects)) projects = [];
+      } catch (e) {
+        console.error('Failed to parse saved projects:', e);
+        projects = [];
       }
+      
+      const updatedProjects = projects.filter(p => p.id !== projectId);
+      updatedProjects.push(projectData);
       
       localStorage.setItem('user_projects', JSON.stringify(updatedProjects));
       console.log("Project saved to localStorage");
@@ -73,9 +68,9 @@ const useProjectData = (projectId) => {
   // Load project from localStorage or mock data
   const loadFromLocalStorage = useCallback(() => {
     console.log("Attempting to load project from localStorage");
-    const savedProjects = localStorage.getItem('user_projects');
-    if (savedProjects) {
-      try {
+    try {
+      const savedProjects = localStorage.getItem('user_projects');
+      if (savedProjects) {
         const projects = JSON.parse(savedProjects);
         if (Array.isArray(projects)) {
           const foundProject = projects.find(p => p.id === projectId);
@@ -88,43 +83,51 @@ const useProjectData = (projectId) => {
             return formattedProject;
           }
         }
-      } catch (e) {
-        console.error('Failed to parse saved projects:', e);
       }
-    }
 
-    // If no match in localStorage, check mock projects
-    console.log("No project found in localStorage, trying mock data");
-    const foundMockProject = mockProjects.find(p => p.id === projectId);
-    if (foundMockProject) {
-      console.log("Using mock project data:", foundMockProject);
-      const formattedProject = formatProjectDates(foundMockProject);
-      setProject(formattedProject);
-      setError(null);
-      setIsLoading(false);
-      return formattedProject;
-    } else {
-      // No project found anywhere
-      console.error("Project not found anywhere");
-      setError("Project not found");
-      toast({
-        title: "Project not found",
-        description: "The requested project could not be found",
-        variant: "destructive"
-      });
+      // If no match in localStorage, check mock projects
+      console.log("No project found in localStorage, trying mock data");
+      const foundMockProject = mockProjects.find(p => p.id === projectId);
+      if (foundMockProject) {
+        console.log("Using mock project data:", foundMockProject);
+        const formattedProject = formatProjectDates(foundMockProject);
+        setProject(formattedProject);
+        setError(null);
+        setIsLoading(false);
+        
+        // Save mock project to localStorage for consistency
+        saveToLocalStorage(formattedProject);
+        return formattedProject;
+      } else {
+        // No project found anywhere
+        console.error("Project not found anywhere");
+        setError("Project not found");
+        toast({
+          title: "Project not found",
+          description: "The requested project could not be found",
+          variant: "destructive"
+        });
+        setIsLoading(false);
+        return null;
+      }
+    } catch (e) {
+      console.error('Error loading project from localStorage:', e);
+      setError("Error loading project");
       setIsLoading(false);
       return null;
     }
-  }, [projectId, formatProjectDates]);
+  }, [projectId, formatProjectDates, saveToLocalStorage]);
 
   // Load project data
   useEffect(() => {
     if (!projectId) return;
     
-    setIsLoading(true);
+    let unsubscribe = () => {};
+    let mounted = true;
     
-    // Main function to load project data
-    const loadProjectData = () => {
+    const loadProjectData = async () => {
+      setIsLoading(true);
+      
       try {
         // Try to directly read from Firebase if user is authenticated
         if (auth.currentUser) {
@@ -132,7 +135,9 @@ const useProjectData = (projectId) => {
           const projectRef = ref(database, `projects/${projectId}`);
           
           // Set up real-time listener
-          const unsubscribe = onValue(projectRef, (snapshot) => {
+          unsubscribe = onValue(projectRef, (snapshot) => {
+            if (!mounted) return;
+            
             if (snapshot.exists()) {
               const projectData = snapshot.val();
               console.log("Project data loaded from Firebase:", projectData);
@@ -149,53 +154,58 @@ const useProjectData = (projectId) => {
               loadFromLocalStorage();
             }
           }, (error) => {
+            if (!mounted) return;
+            
             console.error("Firebase real-time listener error:", error);
             loadFromLocalStorage();
           });
-          
-          return unsubscribe;
         } else {
           console.log("No authenticated user, loading from localStorage");
           loadFromLocalStorage();
-          return () => {};
         }
       } catch (err) {
+        if (!mounted) return;
+        
         console.error('Error setting up project listener:', err);
         loadFromLocalStorage();
-        return () => {};
       }
     };
     
-    const unsubscribe = loadProjectData();
+    loadProjectData();
     
     // Cleanup function
     return () => {
+      mounted = false;
       if (typeof unsubscribe === 'function') {
         unsubscribe();
       }
     };
-  }, [projectId, auth.currentUser?.uid, formatProjectDates, loadFromLocalStorage, saveToLocalStorage]);
+  }, [projectId, formatProjectDates, loadFromLocalStorage, saveToLocalStorage]);
 
   // Save project changes
   const saveProjectChanges = useCallback(async (updatedProject) => {
+    if (!updatedProject || !projectId) return project;
+    
     try {
       console.log("Saving project changes:", updatedProject.id);
       
       // Prepare project for Firebase (convert dates to strings)
       const prepareForFirebase = (project) => {
+        if (!project) return {};
+        
         return {
           ...project,
           dueDate: project.dueDate instanceof Date 
             ? project.dueDate.toISOString() 
             : project.dueDate,
-          meetings: project.meetings?.map(meeting => ({
+          meetings: Array.isArray(project.meetings) ? project.meetings.map(meeting => ({
             ...meeting,
             date: meeting.date instanceof Date ? meeting.date.toISOString() : meeting.date
-          })),
-          commits: project.commits?.map(commit => ({
+          })) : [],
+          commits: Array.isArray(project.commits) ? project.commits.map(commit => ({
             ...commit,
             date: commit.date instanceof Date ? commit.date.toISOString() : commit.date
-          }))
+          })) : []
         };
       };
       
@@ -243,16 +253,16 @@ const useProjectData = (projectId) => {
 
   // Handle delete project
   const handleDeleteProject = useCallback(async () => {
+    if (!projectId) {
+      toast({
+        title: "Error",
+        description: "Project ID is required",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     try {
-      if (!projectId) {
-        toast({
-          title: "Error",
-          description: "Project ID is required",
-          variant: "destructive"
-        });
-        return;
-      }
-      
       setIsLoading(true);
       
       // Try to delete from Firebase if user is authenticated
@@ -300,7 +310,9 @@ const useProjectData = (projectId) => {
     
     const updatedProject = {
       ...project,
-      meetings: project.meetings.filter(meeting => meeting.id !== meetingId)
+      meetings: Array.isArray(project.meetings) 
+        ? project.meetings.filter(meeting => meeting.id !== meetingId)
+        : []
     };
     
     saveProjectChanges(updatedProject);

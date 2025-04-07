@@ -1,13 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, AlertCircle } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -16,13 +15,17 @@ const Login = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const { login, isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Get the intended destination from location state or default to dashboard
+  const from = location.state?.from?.pathname || '/dashboard';
   
   // Redirect if already authenticated
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/dashboard');
+    if (!loading && isAuthenticated) {
+      navigate(from, { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, loading, navigate, from]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -36,7 +39,7 @@ const Login = () => {
     try {
       setIsSubmitting(true);
       await login(email, password);
-      // We don't need to manually navigate here as the AuthContext will handle it
+      // We don't need to manually navigate here as the useEffect will handle it
     } catch (error) {
       console.error("Login error:", error);
       setErrorMsg(error.message || "Invalid credentials");
@@ -45,13 +48,17 @@ const Login = () => {
     }
   };
 
+  // Show spinner when checking authentication
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
+
+  // If already authenticated, don't render the form (useEffect will redirect)
+  if (isAuthenticated) return null;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">

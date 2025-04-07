@@ -28,7 +28,10 @@ const DeleteProjectDialog = ({ isOpen, onOpenChange, onConfirmDelete }) => {
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button variant="destructive" onClick={onConfirmDelete}>
+          <Button variant="destructive" onClick={() => {
+            onConfirmDelete();
+            onOpenChange(false);
+          }}>
             <Trash2 className="mr-2 h-4 w-4" />
             Delete Project
           </Button>
