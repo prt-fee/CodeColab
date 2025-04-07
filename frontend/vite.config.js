@@ -23,5 +23,11 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom', 'firebase/app', 'firebase/auth', 'firebase/database']
+  },
+  // Improve error handling
+  customLogger: {
+    error: (msg) => {
+      console.error(msg);
+    }
   }
 });

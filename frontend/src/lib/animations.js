@@ -1,6 +1,6 @@
 
 /**
- * Utility functions for animations
+ * Animations utility functions for smooth UI transitions
  */
 
 // Create a staggered animation effect for multiple elements
@@ -14,6 +14,10 @@ export const staggerAnimation = (elements, delayBetween = 0.1, duration = 0.5) =
     elements.forEach((element, index) => {
       if (!element) return;
       
+      element.style.opacity = '0';
+      element.style.transform = 'translateY(20px)';
+      element.style.transition = `opacity ${duration}s ease, transform ${duration}s ease`;
+      
       setTimeout(() => {
         element.style.opacity = '1';
         element.style.transform = 'translateY(0)';
@@ -25,15 +29,19 @@ export const staggerAnimation = (elements, delayBetween = 0.1, duration = 0.5) =
 };
 
 // Fade in animation
-export const fadeIn = (element, duration = 500) => {
+export const fadeIn = (element, duration = 300) => {
   if (!element) return;
   
+  element.style.opacity = '0';
   element.style.transition = `opacity ${duration}ms ease-in-out`;
-  element.style.opacity = '1';
+  
+  setTimeout(() => {
+    element.style.opacity = '1';
+  }, 10); // Small delay to ensure the transition applies
 };
 
 // Fade out animation
-export const fadeOut = (element, duration = 500) => {
+export const fadeOut = (element, duration = 300) => {
   if (!element) return;
   
   element.style.transition = `opacity ${duration}ms ease-in-out`;
@@ -41,7 +49,7 @@ export const fadeOut = (element, duration = 500) => {
 };
 
 // Slide in from bottom
-export const slideInFromBottom = (element, duration = 500, delay = 0) => {
+export const slideInFromBottom = (element, duration = 300, delay = 0) => {
   if (!element) return;
   
   element.style.transform = 'translateY(20px)';
@@ -52,6 +60,20 @@ export const slideInFromBottom = (element, duration = 500, delay = 0) => {
     element.style.transform = 'translateY(0)';
     element.style.opacity = '1';
   }, delay);
+};
+
+// Slide in from right
+export const slideInFromRight = (element, duration = 300) => {
+  if (!element) return;
+  
+  element.style.transform = 'translateX(20px)';
+  element.style.opacity = '0';
+  element.style.transition = `transform ${duration}ms ease-out, opacity ${duration}ms ease-out`;
+  
+  setTimeout(() => {
+    element.style.transform = 'translateX(0)';
+    element.style.opacity = '1';
+  }, 10);
 };
 
 // Add smooth page transitions
@@ -67,6 +89,20 @@ export const addPageTransitions = () => {
       }, 50);
     }
   });
+};
+
+// Apply animations to page content
+export const animatePageContent = (parentSelector = 'main') => {
+  try {
+    const parent = document.querySelector(parentSelector);
+    if (!parent) return;
+    
+    // Find direct children to animate
+    const elements = Array.from(parent.children);
+    staggerAnimation(elements, 0.1, 0.3);
+  } catch (error) {
+    console.error('Error animating page content:', error);
+  }
 };
 
 // Preload images to prevent flickering

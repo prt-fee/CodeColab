@@ -1,11 +1,11 @@
 
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
-import { getAuth, connectAuthEmulator } from "firebase/auth";
-import { getDatabase, connectDatabaseEmulator } from "firebase/database";
-import { getStorage, connectStorageEmulator } from "firebase/storage";
+import { getAuth } from "firebase/auth";
+import { getDatabase } from "firebase/database";
+import { getStorage } from "firebase/storage";
 
-// Your web app's Firebase configuration
+// Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyCEcXDRdwLijOZcqakGVELIaPhM55dsLAA",
   authDomain: "code-collab-dedbb.firebaseapp.com",
@@ -17,33 +17,22 @@ const firebaseConfig = {
   measurementId: "G-3FPFPW0VZQ"
 };
 
-
-// const firebaseConfig = {
-//   apiKey: "AIzaSyCUgrfm5StmQSjGqMXbd7lelAbQJYSc_GE",
-//   authDomain: "code-collab-42013.firebaseapp.com",
-//   databaseURL: "https://code-collab-42013-default-rtdb.firebaseio.com",
-//   projectId: "code-collab-42013",
-//   storageBucket: "code-collab-42013.firebasestorage.app",
-//   messagingSenderId: "482113941412",
-//   appId: "1:482113941412:web:5a9ba815645184aa1e9b31"
-// };
-
-// Initialize Firebase
-console.log("Initializing Firebase...");
+// Initialize Firebase - create a singleton to prevent multiple initializations
 let app, auth, database, storage, analytics;
 
 try {
+  console.log("Initializing Firebase...");
+  
   // Initialize Firebase app - only once
-  if (!app) {
-    app = initializeApp(firebaseConfig);
-    console.log("Firebase app initialized successfully");
-  }
+  app = initializeApp(firebaseConfig);
+  console.log("Firebase app initialized successfully");
   
   // Initialize Firebase services
   auth = getAuth(app);
   database = getDatabase(app);
   storage = getStorage(app);
   
+  // Only initialize analytics in browser environment
   if (typeof window !== 'undefined') {
     try {
       analytics = getAnalytics(app);
@@ -53,14 +42,6 @@ try {
     }
   } else {
     console.log("Firebase initialized in server environment (without analytics)");
-  }
-  
-  // Use emulators for local development if needed
-  if (window.location.hostname === "localhost") {
-    // Uncomment these lines if using Firebase emulators
-    // connectAuthEmulator(auth, "http://localhost:9099");
-    // connectDatabaseEmulator(database, "localhost", 9000);
-    // connectStorageEmulator(storage, "localhost", 9199);
   }
 } catch (error) {
   console.error("Error initializing Firebase:", error);

@@ -4,22 +4,38 @@ import { useToast as useToastUI } from "@/components/ui/use-toast";
 export const useToast = useToastUI;
 
 export const toast = (options) => {
-  // Get toast function from the global store that shadcn/ui creates
-  // This is a workaround for using toast outside of React components
-  const { toast: toastFn } = useToastUI();
-  toastFn(options);
-  return;
+  try {
+    // Get toast function from the global store that shadcn/ui creates
+    // This is a workaround for using toast outside of React components
+    const { toast: toastFn } = useToastUI();
+    
+    // Apply the toast with specified options
+    toastFn(options);
+  } catch (error) {
+    console.error("Toast error:", error);
+    // Use event-based approach as fallback
+    showToast(options);
+  }
 };
 
 // For direct usage without hooks
 export const showToast = (options) => {
-  // Get toast function from global DOM event
-  const showToastEvent = new CustomEvent("toast", { detail: options });
-  document.dispatchEvent(showToastEvent);
+  try {
+    // Get toast function from global DOM event
+    const showToastEvent = new CustomEvent("toast", { detail: options });
+    document.dispatchEvent(showToastEvent);
+  } catch (error) {
+    console.error("Failed to show toast via event:", error);
+  }
 };
 
 // Event listener that will be initialized once in the Toaster component
 export const initToastListener = (toastFn) => {
+  if (!toastFn || typeof toastFn !== 'function') {
+    console.error("Toast function not provided to listener");
+    return () => {};
+  }
+  
   const handleToastEvent = (event) => {
     if (event.detail) {
       toastFn(event.detail);
@@ -30,7 +46,7 @@ export const initToastListener = (toastFn) => {
   return () => document.removeEventListener("toast", handleToastEvent);
 };
 
-// Helper function to create consistent toast messages
+// Helper functions for consistent toast messages
 export const toastSuccess = (title, description) => {
   return toast({
     title,
