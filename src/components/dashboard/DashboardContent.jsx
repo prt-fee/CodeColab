@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useTaskManager } from '@/hooks/useTaskManager';
 import StatsCards from '@/components/dashboard/StatsCards';
@@ -7,14 +7,17 @@ import ProjectsList from '@/components/dashboard/ProjectsList';
 import RecentTasks from '@/components/dashboard/RecentTasks';
 import useDashboard from '@/hooks/useDashboard';
 import { toast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 const DashboardContent = () => {
+  const navigate = useNavigate();
+  const [isContentLoaded, setIsContentLoaded] = useState(false);
+  
   const {
     projects,
     isLoading,
     handleProjectClick,
     deleteProject,
-    createProject,
     refreshProjects
   } = useDashboard();
 
@@ -23,8 +26,16 @@ const DashboardContent = () => {
   // Refresh data when component mounts
   useEffect(() => {
     console.log("DashboardContent: Refreshing data");
+    
+    // Set a flag to avoid flickering on initial render
+    const timer = setTimeout(() => {
+      setIsContentLoaded(true);
+    }, 300);
+
     refreshProjects();
     if (refreshTasks) refreshTasks();
+    
+    return () => clearTimeout(timer);
   }, [refreshProjects, refreshTasks]);
   
   // Calculate upcoming tasks (due in the next 7 days)
@@ -37,7 +48,7 @@ const DashboardContent = () => {
     return dueDate >= today && dueDate <= nextWeek;
   }).length;
 
-  if (isLoading) {
+  if (isLoading || !isContentLoaded) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -46,8 +57,8 @@ const DashboardContent = () => {
   }
 
   const handleCreateNewProject = () => {
-    // Redirect to projects page to create a new project
-    window.location.href = "/projects";
+    // Navigate to projects page to create a new project
+    navigate("/projects");
   };
 
   return (

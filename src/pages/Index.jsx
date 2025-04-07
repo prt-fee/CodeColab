@@ -14,6 +14,16 @@ const Index = () => {
   const { isAuthenticated, user, loading } = useAuth();
   const navigate = useNavigate();
   const [redirecting, setRedirecting] = useState(false);
+  const [contentVisible, setContentVisible] = useState(false);
+
+  // Add a small delay before showing content to prevent flicker
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setContentVisible(true);
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     // If the user is already authenticated, redirect to dashboard
@@ -31,7 +41,7 @@ const Index = () => {
     }
   }, [isAuthenticated, user, loading, navigate, redirecting]);
 
-  if (loading || redirecting) {
+  if (loading || redirecting || !contentVisible) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />

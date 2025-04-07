@@ -52,13 +52,25 @@ const normalizeProject = (project) => {
   // Ensure members is an array
   const members = Array.isArray(project.members) ? project.members : [];
   
+  // Check if dueDate is valid
+  let dueDateObj;
+  try {
+    dueDateObj = project.dueDate ? new Date(project.dueDate) : new Date();
+    // Check if date is valid
+    if (isNaN(dueDateObj.getTime())) {
+      dueDateObj = new Date();
+    }
+  } catch (e) {
+    dueDateObj = new Date();
+  }
+  
   return {
     ...project,
     id: project.id || `temp-${Date.now()}`,
     title: project.title || project.name || 'Untitled Project',
     description: project.description || '',
     color: project.color || 'blue',
-    dueDate: project.dueDate ? new Date(project.dueDate) : new Date(),
+    dueDate: dueDateObj,
     // Ensure members is always an array
     members: members,
     // Ensure tasksCount exists with proper structure
@@ -78,6 +90,7 @@ const useDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const { saveProjects, getProjects } = useLocalStorage();
+  const [dataFetched, setDataFetched] = useState(false);
 
   // Function to refresh projects - separate from effect to be callable
   const refreshProjects = useCallback(() => {
@@ -95,23 +108,34 @@ const useDashboard = () => {
     const storedProjects = getProjects();
     if (storedProjects && storedProjects.length > 0) {
       console.log("Loaded projects from localStorage:", storedProjects.length);
-      const normalizedProjects = storedProjects.map(project => normalizeProject(project));
-      setProjects(normalizedProjects);
+      try {
+        const normalizedProjects = storedProjects.map(project => normalizeProject(project));
+        setProjects(normalizedProjects);
+        // Don't set isLoading to false here to prevent flickering
+      } catch (e) {
+        console.error("Error normalizing stored projects:", e);
+      }
     }
     
     try {
       // Set up real-time listener for projects
       const unsubscribe = listenToList('projects', 'owner', user.id, (data) => {
         console.log("Received projects data from Firebase:", data?.length || 0);
+        setDataFetched(true);
         
         if (data && Array.isArray(data) && data.length > 0) {
-          // Normalize each project to ensure consistent structure
-          const formattedProjects = data.map(project => normalizeProject(project));
-          
-          setProjects(formattedProjects);
-          
-          // Also save to localStorage as backup
-          saveProjects(formattedProjects);
+          try {
+            // Normalize each project to ensure consistent structure
+            const formattedProjects = data.map(project => normalizeProject(project));
+            
+            setProjects(formattedProjects);
+            
+            // Also save to localStorage as backup
+            saveProjects(formattedProjects);
+          } catch (e) {
+            console.error("Error processing projects data:", e);
+            handleFirebaseError(storedProjects);
+          }
         } else if (data && Array.isArray(data) && data.length === 0) {
           // No projects found in Firebase, but we still need to update state
           console.log("No projects found in Firebase");
@@ -141,13 +165,22 @@ const useDashboard = () => {
   useEffect(() => {
     const unsubscribe = refreshProjects();
     
+    // Set a timeout to ensure loading state is cleared even if Firebase fails
+    const timer = setTimeout(() => {
+      if (!dataFetched) {
+        console.log("Data fetch timeout - resetting loading state");
+        setIsLoading(false);
+      }
+    }, 5000);
+    
     // Cleanup on unmount
     return () => {
+      clearTimeout(timer);
       if (unsubscribe && typeof unsubscribe === 'function') {
         unsubscribe();
       }
     };
-  }, [refreshProjects]);
+  }, [refreshProjects, dataFetched]);
 
   const handleFirebaseError = (storedProjects) => {
     setError('Failed to load projects from Firebase');
@@ -156,9 +189,14 @@ const useDashboard = () => {
     // Use localStorage data if available
     if (storedProjects && storedProjects.length > 0) {
       // Normalize projects from localStorage
-      const normalizedProjects = storedProjects.map(project => normalizeProject(project));
-      setProjects(normalizedProjects);
-      console.log("Using localStorage projects as fallback:", normalizedProjects.length);
+      try {
+        const normalizedProjects = storedProjects.map(project => normalizeProject(project));
+        setProjects(normalizedProjects);
+        console.log("Using localStorage projects as fallback:", normalizedProjects.length);
+      } catch (e) {
+        console.error("Error using localStorage fallback:", e);
+        setProjects(mockProjects);
+      }
     } else {
       // Use mock data as a last resort
       console.log("No localStorage data, using mock projects");

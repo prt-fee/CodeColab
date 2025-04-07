@@ -73,8 +73,12 @@ export const AuthProvider = ({ children }) => {
     }
     
     // Cleanup subscription
-    return () => unsubscribe();
-  }, [initialized]);
+    return () => {
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
+    };
+  }, [initialized, getUser, saveUser, user]);
 
   const login = useCallback(async (email, password) => {
     try {

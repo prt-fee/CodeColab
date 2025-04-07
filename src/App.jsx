@@ -35,7 +35,8 @@ const queryClient = new QueryClient({
     queries: {
       refetchOnWindowFocus: false, // Prevent refetching when window regains focus
       retry: 1, // Limit retries to reduce flickering
-      staleTime: 5000, // Add some stale time to prevent frequent refetching
+      staleTime: 30000, // Use longer stale time (30s) to prevent frequent refetching
+      gcTime: 60000, // Keep cached data longer (1min)
     },
   },
 });
@@ -66,11 +67,12 @@ const App = memo(function App() {
                 <Route path="/features" element={<Features />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
-              <Toaster />
-              <Sonner />
             </TooltipProvider>
           </NotificationsProvider>
         </AuthProvider>
+        {/* Move Toaster and Sonner outside of routing structure */}
+        <Toaster />
+        <Sonner />
       </Router>
     </QueryClientProvider>
   );

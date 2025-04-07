@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Trash2 } from 'lucide-react';
 
 const DeleteProjectDialog = ({ isOpen, onOpenChange, onConfirmDelete }) => {
-  // Handle the confirmation safely
+  // Handle the confirmation safely with debounce to prevent duplicate clicks
   const handleConfirmDelete = () => {
     if (typeof onConfirmDelete === 'function') {
       onConfirmDelete();

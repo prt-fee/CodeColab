@@ -1,9 +1,9 @@
 
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
-import { getAuth } from "firebase/auth";
-import { getDatabase } from "firebase/database";
-import { getStorage } from "firebase/storage";
+import { getAuth, connectAuthEmulator } from "firebase/auth";
+import { getDatabase, connectDatabaseEmulator } from "firebase/database";
+import { getStorage, connectStorageEmulator } from "firebase/storage";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -22,9 +22,11 @@ console.log("Initializing Firebase...");
 let app, auth, database, storage, analytics;
 
 try {
-  // Initialize Firebase app if not already initialized
-  app = initializeApp(firebaseConfig);
-  console.log("Firebase app initialized successfully");
+  // Initialize Firebase app - only once
+  if (!app) {
+    app = initializeApp(firebaseConfig);
+    console.log("Firebase app initialized successfully");
+  }
   
   // Initialize Firebase services
   auth = getAuth(app);
@@ -73,4 +75,5 @@ try {
   if (!analytics) analytics = { logEvent: () => {} };
 }
 
+// Export singleton instances
 export { app, auth, database, storage, analytics };

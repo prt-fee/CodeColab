@@ -46,14 +46,16 @@ const useProjects = () => {
   const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     // Load projects from localStorage if available
-    const savedProjects = localStorage.getItem('user_projects');
-    
-    const timer = setTimeout(() => {
-      if (savedProjects) {
-        try {
+    const loadProjects = () => {
+      setIsLoading(true);
+      try {
+        const savedProjects = localStorage.getItem('user_projects');
+        
+        if (savedProjects) {
           const parsedProjects = JSON.parse(savedProjects);
           // Ensure the data is in the expected format
           if (Array.isArray(parsedProjects)) {
@@ -62,15 +64,20 @@ const useProjects = () => {
             console.warn('Saved projects is not an array, using mock data');
             setProjects(mockProjects);
           }
-        } catch (e) {
-          console.error('Failed to parse saved projects', e);
+        } else {
           setProjects(mockProjects);
         }
-      } else {
+      } catch (e) {
+        console.error('Failed to parse saved projects', e);
+        setError(e.message);
         setProjects(mockProjects);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
-    }, 1000);
+    };
+    
+    // Add a small delay to prevent flickering
+    const timer = setTimeout(loadProjects, 300);
     
     return () => clearTimeout(timer);
   }, []);
@@ -82,6 +89,7 @@ const useProjects = () => {
   return {
     projects,
     isLoading,
+    error,
     navigateToProject
   };
 };

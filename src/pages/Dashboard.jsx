@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import NavBar from '@/components/NavBar';
@@ -11,7 +11,15 @@ import { toast } from '@/hooks/use-toast';
 const Dashboard = () => {
   const { user, loading, isAuthenticated } = useAuth();
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [contentReady, setContentReady] = useState(false);
   const navigate = useNavigate();
+
+  // Debounced state update to prevent flickering
+  const setReadyWithDelay = useCallback(() => {
+    setTimeout(() => {
+      setContentReady(true);
+    }, 100);
+  }, []);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -24,13 +32,14 @@ const Dashboard = () => {
         variant: "destructive"
       });
       navigate('/login');
-    } else if (isAuthenticated) {
-      console.log("User authenticated:", user?.id);
+    } else if (isAuthenticated && user) {
+      console.log("User authenticated:", user.id);
+      setReadyWithDelay();
     }
-  }, [isAuthenticated, loading, navigate, user, isRedirecting]);
+  }, [isAuthenticated, loading, navigate, user, isRedirecting, setReadyWithDelay]);
 
   // Show loading state while checking authentication
-  if (loading || isRedirecting) {
+  if (loading || isRedirecting || !contentReady) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Loader2, Plus } from 'lucide-react';
@@ -10,7 +9,7 @@ import NewProjectDialog from '@/components/dashboard/NewProjectDialog';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { database, auth } from '@/services/firebase';
-import { ref, onValue, push, set } from 'firebase/database';
+import { ref, onValue, set } from 'firebase/database';
 
 const Projects = () => {
   const navigate = useNavigate();
@@ -18,6 +17,7 @@ const Projects = () => {
   
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [contentReady, setContentReady] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newProject, setNewProject] = useState({
@@ -31,7 +31,14 @@ const Projects = () => {
     status: 'active'
   });
 
-  // Check authentication and redirect if needed
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setContentReady(true);
+    }, 300);
+    
+    return () => clearTimeout(timer);
+  }, []);
+
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       console.log("Not authenticated, redirecting to login");
@@ -44,57 +51,24 @@ const Projects = () => {
     }
   }, [isAuthenticated, authLoading, navigate]);
 
-  // Function to load projects
   const loadProjects = useCallback(async () => {
+    if (!isAuthenticated || !user) return;
+    
     setLoading(true);
     
     try {
-      // For now we'll load from localStorage or use mock data
       const savedProjects = localStorage.getItem('user_projects');
       if (savedProjects) {
-        const parsedProjects = JSON.parse(savedProjects);
-        if (Array.isArray(parsedProjects)) {
-          setProjects(parsedProjects);
-        } else {
-          setProjects([]);
-        }
-      } else {
-        // Use mock data if nothing in localStorage
-        const mockData = [
-          {
-            id: '1',
-            title: 'Website Redesign',
-            description: 'Redesign the company website with a modern look and feel',
-            color: 'blue',
-            dueDate: new Date('2023-06-30').toISOString(),
-            members: 4,
-            tasksCount: { total: 12, completed: 8 }
-          },
-          {
-            id: '2',
-            title: 'Mobile App Development',
-            description: 'Create a new mobile app for customer engagement',
-            color: 'green',
-            dueDate: new Date('2023-08-15').toISOString(),
-            members: 6,
-            tasksCount: { total: 20, completed: 5 }
-          },
-          {
-            id: '3',
-            title: 'Marketing Campaign',
-            description: 'Plan and execute Q3 marketing campaign',
-            color: 'orange',
-            dueDate: new Date('2023-07-10').toISOString(),
-            members: 3,
-            tasksCount: { total: 8, completed: 2 }
+        try {
+          const parsedProjects = JSON.parse(savedProjects);
+          if (Array.isArray(parsedProjects)) {
+            setProjects(parsedProjects);
           }
-        ];
-        
-        setProjects(mockData);
-        localStorage.setItem('user_projects', JSON.stringify(mockData));
+        } catch (err) {
+          console.error("Error parsing projects from localStorage:", err);
+        }
       }
       
-      // If authenticated, also try to load from Firebase
       if (auth.currentUser) {
         const projectsRef = ref(database, 'projects');
         onValue(projectsRef, (snapshot) => {
@@ -102,15 +76,54 @@ const Projects = () => {
             const fbProjects = [];
             snapshot.forEach((child) => {
               const project = child.val();
-              if (project && project.id) {
+              if (project && project.id && (project.owner === user.id)) {
                 fbProjects.push(project);
               }
             });
             
             if (fbProjects.length > 0) {
+              console.log("Loaded projects from Firebase:", fbProjects.length);
               setProjects(fbProjects);
               localStorage.setItem('user_projects', JSON.stringify(fbProjects));
+            } else if (!savedProjects) {
+              const mockData = [
+                {
+                  id: '1',
+                  title: 'Website Redesign',
+                  description: 'Redesign the company website with a modern look and feel',
+                  color: 'blue',
+                  dueDate: new Date('2023-06-30').toISOString(),
+                  members: 4,
+                  tasksCount: { total: 12, completed: 8 },
+                  owner: user.id
+                },
+                {
+                  id: '2',
+                  title: 'Mobile App Development',
+                  description: 'Create a new mobile app for customer engagement',
+                  color: 'green',
+                  dueDate: new Date('2023-08-15').toISOString(),
+                  members: 6,
+                  tasksCount: { total: 20, completed: 5 },
+                  owner: user.id
+                },
+                {
+                  id: '3',
+                  title: 'Marketing Campaign',
+                  description: 'Plan and execute Q3 marketing campaign',
+                  color: 'orange',
+                  dueDate: new Date('2023-07-10').toISOString(),
+                  members: 3,
+                  tasksCount: { total: 8, completed: 2 },
+                  owner: user.id
+                }
+              ];
+              
+              setProjects(mockData);
+              localStorage.setItem('user_projects', JSON.stringify(mockData));
             }
+          } else if (!savedProjects) {
+            setProjects([]);
           }
         }, (error) => {
           console.error("Error loading projects from Firebase:", error);
@@ -126,41 +139,32 @@ const Projects = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isAuthenticated, user]);
 
-  // Load projects on component mount
   useEffect(() => {
-    if (isAuthenticated && user) {
-      loadProjects();
-    }
-  }, [isAuthenticated, user, loadProjects]);
+    loadProjects();
+  }, [loadProjects]);
 
-  // Filter projects based on search term
   const filteredProjects = projects.filter(project => 
     project.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     project.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Navigate to project detail
   const navigateToProject = (projectId) => {
     if (projectId) {
       navigate(`/projects/${projectId}`);
     }
   };
 
-  // Delete project
   const deleteProject = (projectId) => {
     if (!projectId) return;
     
     try {
-      // Remove from local state
       const updatedProjects = projects.filter(p => p.id !== projectId);
       setProjects(updatedProjects);
       
-      // Save to localStorage
       localStorage.setItem('user_projects', JSON.stringify(updatedProjects));
       
-      // If authenticated, delete from Firebase
       if (auth.currentUser) {
         const projectRef = ref(database, `projects/${projectId}`);
         set(projectRef, null)
@@ -196,7 +200,6 @@ const Projects = () => {
     }
     
     try {
-      // Generate a unique ID
       const projectId = Date.now().toString();
       
       const newProjectData = {
@@ -214,14 +217,11 @@ const Projects = () => {
         owner: user?.id || 'anonymous'
       };
       
-      // Add to local state
       const updatedProjects = [...projects, newProjectData];
       setProjects(updatedProjects);
       
-      // Save to localStorage
       localStorage.setItem('user_projects', JSON.stringify(updatedProjects));
       
-      // If authenticated, save to Firebase
       if (auth.currentUser) {
         const projectsRef = ref(database, `projects/${projectId}`);
         await set(projectsRef, newProjectData);
@@ -245,7 +245,6 @@ const Projects = () => {
       
       setIsDialogOpen(false);
       
-      // Navigate to the new project
       navigateToProject(projectId);
     } catch (error) {
       console.error('Error creating project:', error);
@@ -257,7 +256,7 @@ const Projects = () => {
     }
   };
 
-  if (authLoading || loading) {
+  if (authLoading || loading || !contentReady) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
