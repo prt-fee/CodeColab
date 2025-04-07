@@ -18,7 +18,7 @@ const Index = () => {
   useEffect(() => {
     // If the user is already authenticated, redirect to dashboard
     // But only after we've confirmed loading is complete
-    if (!loading && isAuthenticated && user) {
+    if (!loading && isAuthenticated && user && !redirecting) {
       console.log("User is authenticated, redirecting to dashboard");
       setRedirecting(true);
       
@@ -29,7 +29,7 @@ const Index = () => {
       
       return () => clearTimeout(timer);
     }
-  }, [isAuthenticated, user, loading, navigate]);
+  }, [isAuthenticated, user, loading, navigate, redirecting]);
 
   if (loading || redirecting) {
     return (

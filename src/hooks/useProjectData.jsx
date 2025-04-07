@@ -2,10 +2,48 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
-import { projectAPI } from '@/services/firebaseAPI';
 import { auth, database } from '@/services/firebase';
-import { ref, onValue, set } from 'firebase/database';
-import { mockProjects } from '@/data/mockProjects';
+import { ref, onValue, set, get } from 'firebase/database';
+
+// Initial mock projects data for fallback
+const mockProjects = [
+  {
+    id: '1',
+    title: 'Website Redesign',
+    description: 'Redesign the company website with a modern look and feel',
+    color: 'blue',
+    dueDate: '2023-06-30',
+    members: 4,
+    tasksCount: {
+      total: 12,
+      completed: 8
+    }
+  },
+  {
+    id: '2',
+    title: 'Mobile App Development',
+    description: 'Create a new mobile app for customer engagement',
+    color: 'green',
+    dueDate: '2023-08-15',
+    members: 6,
+    tasksCount: {
+      total: 20,
+      completed: 5
+    }
+  },
+  {
+    id: '3',
+    title: 'Marketing Campaign',
+    description: 'Plan and execute Q3 marketing campaign',
+    color: 'orange',
+    dueDate: '2023-07-10',
+    members: 3,
+    tasksCount: {
+      total: 8,
+      completed: 2
+    }
+  }
+];
 
 const useProjectData = (projectId) => {
   const [project, setProject] = useState(null);
@@ -17,9 +55,9 @@ const useProjectData = (projectId) => {
   const formatProjectDates = useCallback((projectData) => {
     if (!projectData) return null;
     
-    const formattedProject = {
+    return {
       ...projectData,
-      id: projectId,
+      id: projectId || projectData.id,
       dueDate: projectData.dueDate ? new Date(projectData.dueDate) : new Date(),
       meetings: Array.isArray(projectData.meetings) ? projectData.meetings.map(meeting => ({
         ...meeting,
@@ -35,15 +73,13 @@ const useProjectData = (projectId) => {
       collaborationActivity: Array.isArray(projectData.collaborationActivity) ? projectData.collaborationActivity : [],
       members: Array.isArray(projectData.members) ? projectData.members : [],
     };
-    
-    return formattedProject;
   }, [projectId]);
 
   // Save project to localStorage
   const saveToLocalStorage = useCallback((projectData) => {
+    if (!projectData || !projectId) return;
+    
     try {
-      if (!projectData || !projectId) return;
-      
       const savedProjects = localStorage.getItem('user_projects') || '[]';
       let projects = [];
       
@@ -67,7 +103,6 @@ const useProjectData = (projectId) => {
 
   // Load project from localStorage or mock data
   const loadFromLocalStorage = useCallback(() => {
-    console.log("Attempting to load project from localStorage");
     try {
       const savedProjects = localStorage.getItem('user_projects');
       if (savedProjects) {
@@ -75,7 +110,7 @@ const useProjectData = (projectId) => {
         if (Array.isArray(projects)) {
           const foundProject = projects.find(p => p.id === projectId);
           if (foundProject) {
-            console.log("Found project in localStorage:", foundProject);
+            console.log("Found project in localStorage:", foundProject.title);
             const formattedProject = formatProjectDates(foundProject);
             setProject(formattedProject);
             setIsLoading(false);
@@ -86,10 +121,9 @@ const useProjectData = (projectId) => {
       }
 
       // If no match in localStorage, check mock projects
-      console.log("No project found in localStorage, trying mock data");
       const foundMockProject = mockProjects.find(p => p.id === projectId);
       if (foundMockProject) {
-        console.log("Using mock project data:", foundMockProject);
+        console.log("Using mock project data:", foundMockProject.title);
         const formattedProject = formatProjectDates(foundMockProject);
         setProject(formattedProject);
         setError(null);
@@ -120,7 +154,10 @@ const useProjectData = (projectId) => {
 
   // Load project data
   useEffect(() => {
-    if (!projectId) return;
+    if (!projectId) {
+      setIsLoading(false);
+      return;
+    }
     
     let unsubscribe = () => {};
     let mounted = true;
@@ -132,33 +169,45 @@ const useProjectData = (projectId) => {
         // Try to directly read from Firebase if user is authenticated
         if (auth.currentUser) {
           console.log("Loading project data for:", projectId, "User:", auth.currentUser.uid);
-          const projectRef = ref(database, `projects/${projectId}`);
           
-          // Set up real-time listener
-          unsubscribe = onValue(projectRef, (snapshot) => {
-            if (!mounted) return;
+          try {
+            // First try a direct get to avoid flickering with real-time updates
+            const projectRef = ref(database, `projects/${projectId}`);
+            const snapshot = await get(projectRef);
             
-            if (snapshot.exists()) {
+            if (snapshot.exists() && mounted) {
               const projectData = snapshot.val();
-              console.log("Project data loaded from Firebase:", projectData);
-              
               const formattedProject = formatProjectDates(projectData);
               setProject(formattedProject);
-              setIsLoading(false);
               setError(null);
-              
-              // Save to localStorage as backup
               saveToLocalStorage(formattedProject);
-            } else {
-              console.log("Project not found in Firebase, trying fallback methods");
+            } else if (mounted) {
               loadFromLocalStorage();
             }
-          }, (error) => {
-            if (!mounted) return;
             
-            console.error("Firebase real-time listener error:", error);
-            loadFromLocalStorage();
-          });
+            // Then set up real-time listener for updates
+            unsubscribe = onValue(projectRef, (snapshot) => {
+              if (!mounted) return;
+              
+              if (snapshot.exists()) {
+                const projectData = snapshot.val();
+                const formattedProject = formatProjectDates(projectData);
+                setProject(formattedProject);
+                setError(null);
+                saveToLocalStorage(formattedProject);
+              }
+              
+              setIsLoading(false);
+            }, (error) => {
+              if (!mounted) return;
+              console.error("Firebase real-time listener error:", error);
+              // If real-time fails, we still have data from direct get or localStorage
+              setIsLoading(false);
+            });
+          } catch (firebaseError) {
+            console.error("Error getting project from Firebase:", firebaseError);
+            if (mounted) loadFromLocalStorage();
+          }
         } else {
           console.log("No authenticated user, loading from localStorage");
           loadFromLocalStorage();
@@ -187,7 +236,7 @@ const useProjectData = (projectId) => {
     if (!updatedProject || !projectId) return project;
     
     try {
-      console.log("Saving project changes:", updatedProject.id);
+      console.log("Saving project changes:", updatedProject.title);
       
       // Prepare project for Firebase (convert dates to strings)
       const prepareForFirebase = (project) => {
@@ -214,15 +263,10 @@ const useProjectData = (projectId) => {
       // Try to update in Firebase if user is authenticated
       if (auth.currentUser) {
         try {
-          if (projectAPI && projectAPI.updateProject) {
-            await projectAPI.updateProject(projectId, firebaseProject);
-            console.log("Project updated in Firebase");
-          } else {
-            // Direct Firebase update if API is not available
-            const projectRef = ref(database, `projects/${projectId}`);
-            await set(projectRef, firebaseProject);
-            console.log("Project updated directly in Firebase");
-          }
+          // Direct Firebase update
+          const projectRef = ref(database, `projects/${projectId}`);
+          await set(projectRef, firebaseProject);
+          console.log("Project updated in Firebase");
         } catch (firebaseError) {
           console.error("Failed to update in Firebase, saving to localStorage:", firebaseError);
           // Fall back to localStorage
@@ -236,6 +280,11 @@ const useProjectData = (projectId) => {
       
       // Update local state
       setProject(updatedProject);
+      
+      toast({
+        title: "Project saved",
+        description: "Project changes have been saved successfully",
+      });
       
       return updatedProject;
     } catch (error) {
@@ -266,9 +315,10 @@ const useProjectData = (projectId) => {
       setIsLoading(true);
       
       // Try to delete from Firebase if user is authenticated
-      if (auth.currentUser && projectAPI && projectAPI.deleteProject) {
+      if (auth.currentUser) {
         try {
-          await projectAPI.deleteProject(projectId);
+          const projectRef = ref(database, `projects/${projectId}`);
+          await set(projectRef, null);
           console.log("Project deleted from Firebase");
         } catch (firebaseError) {
           console.error("Failed to delete from Firebase:", firebaseError);

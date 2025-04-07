@@ -35,6 +35,7 @@ const queryClient = new QueryClient({
     queries: {
       refetchOnWindowFocus: false, // Prevent refetching when window regains focus
       retry: 1, // Limit retries to reduce flickering
+      staleTime: 5000, // Add some stale time to prevent frequent refetching
     },
   },
 });

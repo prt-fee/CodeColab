@@ -20,7 +20,7 @@ const Login = () => {
   // Get the intended destination from location state or default to dashboard
   const from = location.state?.from?.pathname || '/dashboard';
   
-  // Redirect if already authenticated
+  // Redirect if already authenticated, but only after loading is complete
   useEffect(() => {
     if (!loading && isAuthenticated) {
       navigate(from, { replace: true });

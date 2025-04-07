@@ -32,7 +32,7 @@ const Dashboard = () => {
   // Show loading state while checking authentication
   if (loading || isRedirecting) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );

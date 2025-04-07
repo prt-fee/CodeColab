@@ -12,8 +12,25 @@ import { Button } from '@/components/ui/button';
 import { Trash2 } from 'lucide-react';
 
 const DeleteProjectDialog = ({ isOpen, onOpenChange, onConfirmDelete }) => {
+  // Handle the confirmation safely
+  const handleConfirmDelete = () => {
+    if (typeof onConfirmDelete === 'function') {
+      onConfirmDelete();
+    }
+    if (typeof onOpenChange === 'function') {
+      onOpenChange(false);
+    }
+  };
+
+  // Handle dialog closing safely
+  const handleOpenChange = (open) => {
+    if (typeof onOpenChange === 'function') {
+      onOpenChange(open);
+    }
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-destructive flex items-center gap-2">
@@ -25,13 +42,10 @@ const DeleteProjectDialog = ({ isOpen, onOpenChange, onConfirmDelete }) => {
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="flex flex-col sm:flex-row sm:justify-between gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => handleOpenChange(false)}>
             Cancel
           </Button>
-          <Button variant="destructive" onClick={() => {
-            onConfirmDelete();
-            onOpenChange(false);
-          }}>
+          <Button variant="destructive" onClick={handleConfirmDelete}>
             <Trash2 className="mr-2 h-4 w-4" />
             Delete Project
           </Button>

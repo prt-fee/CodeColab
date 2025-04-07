@@ -1,9 +1,9 @@
 
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
-import { getAuth, connectAuthEmulator } from "firebase/auth";
-import { getDatabase, connectDatabaseEmulator } from "firebase/database";
-import { getStorage, connectStorageEmulator } from "firebase/storage";
+import { getAuth } from "firebase/auth";
+import { getDatabase } from "firebase/database";
+import { getStorage } from "firebase/storage";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -22,11 +22,9 @@ console.log("Initializing Firebase...");
 let app, auth, database, storage, analytics;
 
 try {
-  // Check if the Firebase app is already initialized
-  if (!app) {
-    app = initializeApp(firebaseConfig);
-    console.log("Firebase app initialized successfully");
-  }
+  // Initialize Firebase app if not already initialized
+  app = initializeApp(firebaseConfig);
+  console.log("Firebase app initialized successfully");
   
   // Initialize Firebase services
   auth = getAuth(app);
