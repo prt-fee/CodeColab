@@ -10,15 +10,32 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Trash2 } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 const DeleteProjectDialog = ({ isOpen, onOpenChange, onConfirmDelete }) => {
   // Handle the confirmation safely with debounce to prevent duplicate clicks
   const handleConfirmDelete = () => {
-    if (typeof onConfirmDelete === 'function') {
-      onConfirmDelete();
-    }
-    if (typeof onOpenChange === 'function') {
-      onOpenChange(false);
+    try {
+      if (typeof onConfirmDelete === 'function') {
+        onConfirmDelete();
+        
+        toast({
+          title: "Project deleted",
+          description: "Project has been successfully deleted"
+        });
+      }
+      
+      if (typeof onOpenChange === 'function') {
+        onOpenChange(false);
+      }
+    } catch (error) {
+      console.error("Error deleting project:", error);
+      
+      toast({
+        title: "Error",
+        description: "Failed to delete project. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
