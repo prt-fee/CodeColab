@@ -1,160 +1,11 @@
 
-// import { useState, useEffect } from 'react';
-// import { useNavigate } from 'react-router-dom';
-// import { toast } from '@/hooks/use-toast';
-// import { projectAPI } from '@/services/api';
-
-// // Import mock projects as fallback
-// const mockProjects = [
-//   {
-//     id: '1',
-//     title: 'Website Redesign',
-//     description: 'Redesign the company website with a modern look and feel',
-//     color: 'blue',
-//     dueDate: new Date('2023-06-30'),
-//     members: 4,
-//     tasksCount: {
-//       total: 12,
-//       completed: 8
-//     }
-//   },
-//   {
-//     id: '2',
-//     title: 'Mobile App Development',
-//     description: 'Create a new mobile app for customer engagement',
-//     color: 'green',
-//     dueDate: new Date('2023-08-15'),
-//     members: 6,
-//     tasksCount: {
-//       total: 20,
-//       completed: 5
-//     }
-//   },
-//   {
-//     id: '3',
-//     title: 'Marketing Campaign',
-//     description: 'Plan and execute Q3 marketing campaign',
-//     color: 'orange',
-//     dueDate: new Date('2023-07-10'),
-//     members: 3,
-//     tasksCount: {
-//       total: 8,
-//       completed: 2
-//     }
-//   }
-// ];
-
-// const useDashboard = () => {
-//   const navigate = useNavigate();
-//   const [projects, setProjects] = useState([]);
-//   const [isLoading, setIsLoading] = useState(true);
-//   const [error, setError] = useState(null);
-
-//   // Load projects from API or localStorage
-//   useEffect(() => {
-//     const fetchProjects = async () => {
-//       setIsLoading(true);
-//       try {
-//         // Try to fetch from API first (will work when backend is connected)
-//         const data = await projectAPI.getProjects().catch(() => null);
-        
-//         if (data && Array.isArray(data)) {
-//           setProjects(data);
-//           // Also save to localStorage as backup
-//           localStorage.setItem('user_projects', JSON.stringify(data));
-//         } else {
-//           // If API fails, try localStorage
-//           const savedProjects = localStorage.getItem('user_projects');
-          
-//           if (savedProjects) {
-//             try {
-//               const parsedProjects = JSON.parse(savedProjects);
-//               // Ensure the data is in the expected format
-//               if (Array.isArray(parsedProjects)) {
-//                 setProjects(parsedProjects);
-//               } else {
-//                 console.warn('Saved projects is not an array, using mock data');
-//                 setProjects(mockProjects);
-//               }
-//             } catch (e) {
-//               console.error('Failed to parse saved projects', e);
-//               setProjects(mockProjects);
-//             }
-//           } else {
-//             setProjects(mockProjects);
-//           }
-//         }
-//       } catch (err) {
-//         console.error('Error fetching projects:', err);
-//         setError('Failed to load projects');
-//         setProjects(mockProjects);
-//       } finally {
-//         setIsLoading(false);
-//       }
-//     };
-    
-//     fetchProjects();
-//   }, []);
-
-//   // Save projects to localStorage when they change
-//   useEffect(() => {
-//     if (projects.length > 0 && !isLoading) {
-//       localStorage.setItem('user_projects', JSON.stringify(projects));
-//     }
-//   }, [projects, isLoading]);
-
-//   const handleProjectClick = (projectId) => {
-//     navigate(`/projects/${projectId}`);
-//   };
-
-//   const createProject = (newProject) => {
-//     // Add unique ID and default values
-//     const projectToAdd = {
-//       id: Math.random().toString(36).substr(2, 9),
-//       ...newProject,
-//       createdAt: new Date().toISOString(),
-//       members: newProject.members || [],
-//       files: [],
-//       commits: [],
-//       meetings: [],
-//       collaborators: [],
-//       tasksCount: { total: 0, completed: 0 }
-//     };
-
-//     setProjects(prev => [projectToAdd, ...prev]);
-    
-//     toast({
-//       title: "Project created",
-//       description: `${newProject.title} has been created successfully`,
-//     });
-    
-//     return projectToAdd;
-//   };
-
-//   return {
-//     projects,
-//     isLoading,
-//     error,
-//     handleProjectClick,
-//     createProject
-//   };
-// };
-
-// export default useDashboard;
-
-
-
-
-
-
-
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 import { projectAPI } from '@/services/firebaseAPI';
 import { listenToList } from '@/services/firebaseAPI';
 import { useAuth } from '@/context/AuthContext';
-import { debugFirebase } from '@/utils/debugFirebase';
+import useLocalStorage from '@/hooks/useLocalStorage';
 
 // Mock projects as fallback in case Firebase fails
 const mockProjects = [
@@ -201,13 +52,25 @@ const normalizeProject = (project) => {
   // Ensure members is an array
   const members = Array.isArray(project.members) ? project.members : [];
   
+  // Check if dueDate is valid
+  let dueDateObj;
+  try {
+    dueDateObj = project.dueDate ? new Date(project.dueDate) : new Date();
+    // Check if date is valid
+    if (isNaN(dueDateObj.getTime())) {
+      dueDateObj = new Date();
+    }
+  } catch (e) {
+    dueDateObj = new Date();
+  }
+  
   return {
     ...project,
     id: project.id || `temp-${Date.now()}`,
     title: project.title || project.name || 'Untitled Project',
     description: project.description || '',
     color: project.color || 'blue',
-    dueDate: project.dueDate ? new Date(project.dueDate) : new Date(),
+    dueDate: dueDateObj,
     // Ensure members is always an array
     members: members,
     // Ensure tasksCount exists with proper structure
@@ -226,84 +89,130 @@ const useDashboard = () => {
   const [projects, setProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { saveProjects, getProjects } = useLocalStorage();
+  const [dataFetched, setDataFetched] = useState(false);
 
   // Function to refresh projects - separate from effect to be callable
   const refreshProjects = useCallback(() => {
-    if (!user) return;
+    if (!user) {
+      console.log("No user found, cannot load projects");
+      setProjects([]);
+      setIsLoading(false);
+      return () => {};
+    }
     
     setIsLoading(true);
     console.log("Loading dashboard projects for user:", user.id);
     
+    // First, load from localStorage for immediate UI feedback
+    const storedProjects = getProjects();
+    if (storedProjects && storedProjects.length > 0) {
+      console.log("Loaded projects from localStorage:", storedProjects.length);
+      try {
+        const normalizedProjects = storedProjects.map(project => normalizeProject(project));
+        setProjects(normalizedProjects);
+        // Don't set isLoading to false here to prevent flickering
+      } catch (e) {
+        console.error("Error normalizing stored projects:", e);
+      }
+    }
+    
     try {
       // Set up real-time listener for projects
       const unsubscribe = listenToList('projects', 'owner', user.id, (data) => {
-        console.log("Received projects data:", data);
+        console.log("Received projects data from Firebase:", data?.length || 0);
+        setDataFetched(true);
         
-        // Normalize each project to ensure consistent structure
-        const formattedProjects = data.map(project => normalizeProject(project));
+        if (data && Array.isArray(data) && data.length > 0) {
+          try {
+            // Normalize each project to ensure consistent structure
+            const formattedProjects = data.map(project => normalizeProject(project));
+            
+            setProjects(formattedProjects);
+            
+            // Also save to localStorage as backup
+            saveProjects(formattedProjects);
+          } catch (e) {
+            console.error("Error processing projects data:", e);
+            handleFirebaseError(storedProjects);
+          }
+        } else if (data && Array.isArray(data) && data.length === 0) {
+          // No projects found in Firebase, but we still need to update state
+          console.log("No projects found in Firebase");
+          
+          // If we don't have localStorage projects, set empty array
+          if (!storedProjects || storedProjects.length === 0) {
+            setProjects([]);
+          }
+        }
         
-        setProjects(formattedProjects);
         setIsLoading(false);
-        
-        // Also save to localStorage as backup
-        localStorage.setItem('user_projects', JSON.stringify(formattedProjects));
       }, (error) => {
         console.error('Error in Firebase listener:', error);
-        handleFirebaseError();
+        handleFirebaseError(storedProjects);
       });
       
       // Return cleanup function
       return unsubscribe;
     } catch (err) {
-      console.error('Error fetching projects:', err);
-      handleFirebaseError();
+      console.error('Error setting up projects listener:', err);
+      handleFirebaseError(storedProjects);
+      return () => {};
     }
-  }, [user]);
+  }, [user, getProjects, saveProjects]);
 
   // Load projects from Firebase
   useEffect(() => {
     const unsubscribe = refreshProjects();
     
+    // Set a timeout to ensure loading state is cleared even if Firebase fails
+    const timer = setTimeout(() => {
+      if (!dataFetched) {
+        console.log("Data fetch timeout - resetting loading state");
+        setIsLoading(false);
+      }
+    }, 5000);
+    
     // Cleanup on unmount
     return () => {
+      clearTimeout(timer);
       if (unsubscribe && typeof unsubscribe === 'function') {
         unsubscribe();
       }
     };
-  }, [refreshProjects]);
+  }, [refreshProjects, dataFetched]);
 
-  const handleFirebaseError = () => {
+  const handleFirebaseError = (storedProjects) => {
     setError('Failed to load projects from Firebase');
+    console.error("Firebase error encountered, falling back to localStorage data");
     
-    // Run diagnostics
-    debugFirebase().then(info => {
-      console.log("Firebase diagnostics:", info);
-    }).catch(err => {
-      console.error("Failed to run Firebase diagnostics:", err);
-    });
-    
-    // Try to load from localStorage if Firebase fails
-    const savedProjects = localStorage.getItem('user_projects');
-    if (savedProjects) {
+    // Use localStorage data if available
+    if (storedProjects && storedProjects.length > 0) {
+      // Normalize projects from localStorage
       try {
-        const parsedProjects = JSON.parse(savedProjects);
-        // Normalize projects from localStorage
-        const normalizedProjects = parsedProjects.map(project => normalizeProject(project));
+        const normalizedProjects = storedProjects.map(project => normalizeProject(project));
         setProjects(normalizedProjects);
-        console.log("Loaded projects from localStorage:", normalizedProjects);
+        console.log("Using localStorage projects as fallback:", normalizedProjects.length);
       } catch (e) {
-        console.error('Failed to parse saved projects', e);
-        setProjects(mockProjects.map(project => normalizeProject(project)));
+        console.error("Error using localStorage fallback:", e);
+        setProjects(mockProjects);
       }
     } else {
-      setProjects(mockProjects.map(project => normalizeProject(project)));
-      console.log("Using mock projects as fallback");
+      // Use mock data as a last resort
+      console.log("No localStorage data, using mock projects");
+      const normalizedMockProjects = mockProjects.map(project => normalizeProject(project));
+      setProjects(normalizedMockProjects);
+      saveProjects(normalizedMockProjects);
     }
     
     setIsLoading(false);
   };
 
   const handleProjectClick = (projectId) => {
+    if (!projectId) {
+      console.error("Invalid project ID");
+      return;
+    }
     navigate(`/projects/${projectId}`);
   };
 
@@ -323,7 +232,7 @@ const useDashboard = () => {
       setProjects(updatedProjects);
       
       // Save to localStorage as backup
-      localStorage.setItem('user_projects', JSON.stringify(updatedProjects));
+      saveProjects(updatedProjects);
 
       // Delete from Firebase if available
       if (projectAPI && projectAPI.deleteProject) {
@@ -342,11 +251,23 @@ const useDashboard = () => {
         description: error.message || "Failed to delete project",
         variant: "destructive"
       });
+      
+      // Refresh projects to restore state
+      refreshProjects();
     }
   };
 
   const createProject = async (newProject) => {
     try {
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to create a project",
+          variant: "destructive"
+        });
+        return null;
+      }
+      
       // Create a properly structured project
       const projectToAdd = normalizeProject({
         title: newProject.title || newProject.name,
@@ -359,7 +280,7 @@ const useDashboard = () => {
       const firebaseProject = {
         ...projectToAdd,
         dueDate: projectToAdd.dueDate.toISOString(),
-        owner: user?.id || 'unknown',
+        owner: user?.id,
         createdAt: new Date().toISOString()
       };
       
@@ -367,8 +288,33 @@ const useDashboard = () => {
       
       // Try to create in Firebase
       if (projectAPI && projectAPI.createProject) {
-        createdProject = await projectAPI.createProject(firebaseProject);
-        console.log("Project created in Firebase:", createdProject);
+        try {
+          console.log("Creating project in Firebase:", firebaseProject);
+          createdProject = await projectAPI.createProject(firebaseProject);
+          console.log("Project created in Firebase:", createdProject);
+          
+          // Optimistically update UI
+          const updatedProjects = [...projects, normalizeProject(createdProject)];
+          setProjects(updatedProjects);
+          
+          // Save to localStorage
+          saveProjects(updatedProjects);
+        } catch (firebaseError) {
+          console.error("Firebase create failed, creating locally:", firebaseError);
+          
+          // Create locally if Firebase fails
+          createdProject = {
+            ...firebaseProject,
+            id: `local-${Date.now()}`
+          };
+          
+          // Add to local state immediately
+          const updatedProjects = [...projects, createdProject];
+          setProjects(updatedProjects);
+          
+          // Save to localStorage
+          saveProjects(updatedProjects);
+        }
       } else {
         // Create locally if Firebase isn't available
         createdProject = {
@@ -381,7 +327,7 @@ const useDashboard = () => {
         setProjects(updatedProjects);
         
         // Save to localStorage
-        localStorage.setItem('user_projects', JSON.stringify(updatedProjects));
+        saveProjects(updatedProjects);
         console.log("Project created locally:", createdProject);
       }
       

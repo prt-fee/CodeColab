@@ -1,64 +1,5 @@
 
-// import React from 'react';
-// import { Loader2 } from 'lucide-react';
-// import { useTaskManager } from '@/hooks/useTaskManager';
-// import StatsCards from '@/components/dashboard/StatsCards';
-// import ProjectsList from '@/components/dashboard/ProjectsList';
-// import RecentTasks from '@/components/dashboard/RecentTasks';
-// import useDashboard from '@/hooks/useDashboard';
-
-// const DashboardContent = () => {
-//   const {
-//     projects,
-//     isLoading,
-//     handleProjectClick
-//   } = useDashboard();
-
-//   const { tasks } = useTaskManager();
-
-//   // Calculate upcoming tasks (due in the next 7 days)
-//   const upcomingTasksCount = tasks.filter(task => {
-//     if (!task.dueDate) return false;
-//     const dueDate = new Date(task.dueDate);
-//     const today = new Date();
-//     const nextWeek = new Date();
-//     nextWeek.setDate(today.getDate() + 7);
-//     return dueDate >= today && dueDate <= nextWeek;
-//   }).length;
-
-//   if (isLoading) {
-//     return (
-//       <div className="flex items-center justify-center py-12">
-//         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <>
-//       <StatsCards 
-//         projectsCount={projects.length}
-//         tasksCount={tasks.length}
-//         upcomingTasksCount={upcomingTasksCount}
-//       />
-      
-//       <ProjectsList 
-//         projects={projects}
-//         onCreateClick={() => window.location.href = "/projects"}
-//         onProjectClick={handleProjectClick}
-//       />
-      
-//       <RecentTasks tasks={tasks} />
-//     </>
-//   );
-// };
-
-// export default DashboardContent;
-
-
-
-
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useTaskManager } from '@/hooks/useTaskManager';
 import StatsCards from '@/components/dashboard/StatsCards';
@@ -66,24 +7,36 @@ import ProjectsList from '@/components/dashboard/ProjectsList';
 import RecentTasks from '@/components/dashboard/RecentTasks';
 import useDashboard from '@/hooks/useDashboard';
 import { toast } from '@/hooks/use-toast';
-import TestProjects from './TestProjects';
+import { useNavigate } from 'react-router-dom';
 
 const DashboardContent = () => {
+  const navigate = useNavigate();
+  const [isContentLoaded, setIsContentLoaded] = useState(false);
+  
   const {
     projects,
     isLoading,
     handleProjectClick,
     deleteProject,
-    createProject,
     refreshProjects
   } = useDashboard();
 
-  const { tasks } = useTaskManager();
+  const { tasks, refreshTasks } = useTaskManager();
 
-  // Refresh projects when component mounts
+  // Refresh data when component mounts
   useEffect(() => {
+    console.log("DashboardContent: Refreshing data");
+    
+    // Set a flag to avoid flickering on initial render
+    const timer = setTimeout(() => {
+      setIsContentLoaded(true);
+    }, 300);
+
     refreshProjects();
-  }, [refreshProjects]);
+    if (refreshTasks) refreshTasks();
+    
+    return () => clearTimeout(timer);
+  }, [refreshProjects, refreshTasks]);
   
   // Calculate upcoming tasks (due in the next 7 days)
   const upcomingTasksCount = tasks.filter(task => {
@@ -95,7 +48,7 @@ const DashboardContent = () => {
     return dueDate >= today && dueDate <= nextWeek;
   }).length;
 
-  if (isLoading) {
+  if (isLoading || !isContentLoaded) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -104,15 +57,15 @@ const DashboardContent = () => {
   }
 
   const handleCreateNewProject = () => {
-    // Redirect to projects page to create a new project
-    window.location.href = "/projects";
+    // Navigate to projects page to create a new project
+    navigate("/projects");
   };
 
   return (
     <>
       <StatsCards 
         projectsCount={Array.isArray(projects) ? projects.length : 0}
-        tasksCount={tasks.length}
+        tasksCount={Array.isArray(tasks) ? tasks.length : 0}
         upcomingTasksCount={upcomingTasksCount}
       />
       
@@ -129,7 +82,6 @@ const DashboardContent = () => {
         }}
       />
       
-      <TestProjects />
       <RecentTasks tasks={tasks} />
     </>
   );
