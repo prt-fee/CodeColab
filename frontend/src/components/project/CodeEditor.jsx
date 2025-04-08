@@ -18,22 +18,36 @@ const CodeEditor = ({ file, onSave }) => {
       setCode(file.content || '');
       setIsSaved(true);
       setError(null);
+      
+      // Update line numbers after setting code
+      setTimeout(() => updateLineNumbers(), 50);
     }
   }, [file]);
 
   // Update line numbers when code changes
   useEffect(() => {
+    updateLineNumbers();
+  }, [code]);
+  
+  const updateLineNumbers = () => {
     if (!lineNumbersRef.current) return;
     
-    const lineCount = code.split('\n').length;
+    const lineCount = (code.match(/\n/g) || []).length + 1;
     const numbers = Array.from({ length: lineCount }, (_, i) => i + 1).join('\n');
     lineNumbersRef.current.textContent = numbers;
-  }, [code]);
+  };
 
   // Handle text area input
   const handleCodeChange = (e) => {
     setCode(e.target.value);
     setIsSaved(false);
+  };
+
+  // Sync scroll between textarea and line numbers
+  const handleScroll = () => {
+    if (textareaRef.current && lineNumbersRef.current) {
+      lineNumbersRef.current.scrollTop = textareaRef.current.scrollTop;
+    }
   };
 
   // Handle code save
@@ -79,6 +93,26 @@ const CodeEditor = ({ file, onSave }) => {
     return true;
   };
 
+  // Tab key handling
+  const handleKeyDown = (e) => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const start = e.target.selectionStart;
+      const end = e.target.selectionEnd;
+      
+      // Insert 2 spaces for tab
+      const newValue = code.substring(0, start) + '  ' + code.substring(end);
+      setCode(newValue);
+      
+      // Move cursor position after the inserted tab
+      setTimeout(() => {
+        e.target.selectionStart = e.target.selectionEnd = start + 2;
+      }, 0);
+      
+      setIsSaved(false);
+    }
+  };
+
   // If no file is selected, show empty state
   if (!file) {
     return <EmptyEditor onNewFileClick={() => {}} />;
@@ -118,16 +152,17 @@ const CodeEditor = ({ file, onSave }) => {
         <div className="absolute inset-0 flex">
           <div 
             ref={lineNumbersRef}
-            className="p-4 bg-muted text-right pr-2 select-none text-muted-foreground font-mono text-sm"
+            className="p-4 bg-muted text-right pr-2 select-none text-muted-foreground font-mono text-sm overflow-hidden"
             style={{ minWidth: '3rem' }}
           ></div>
           <textarea
             ref={textareaRef}
             value={code}
             onChange={handleCodeChange}
-            className="flex-1 p-4 font-mono text-sm resize-none bg-background border-0 outline-none"
+            onScroll={handleScroll}
+            onKeyDown={handleKeyDown}
+            className="flex-1 p-4 font-mono text-sm resize-none bg-background border-0 outline-none overflow-auto"
             spellCheck="false"
-            wrap="off"
           />
         </div>
       </div>
