@@ -1,6 +1,6 @@
 
 import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import react from '@vitejs/plugin-react-swc';
 import { resolve } from 'path';
 import { componentTagger } from "lovable-tagger";
 
@@ -15,9 +15,9 @@ export default defineConfig(({ mode }) => ({
     },
   },
   server: {
-    port: 3000,
-    open: true,
-    host: true
+    port: 8080,
+    host: true,
+    open: true
   },
   build: {
     outDir: 'dist',
@@ -27,11 +27,5 @@ export default defineConfig(({ mode }) => ({
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom', 'firebase/app', 'firebase/auth', 'firebase/database']
-  },
-  // Improve error handling
-  customLogger: {
-    error: (msg) => {
-      console.error(msg);
-    }
   }
 }));
