@@ -1,5 +1,11 @@
 
-// Re-export from the hooks directory
-import { useToast, toast } from "@/hooks/use-toast";
+// Direct re-export from the toast component
+import { toast } from "@/components/ui/toast";
+export { toast };
 
-export { useToast, toast };
+// Custom hook for React components
+export const useToast = () => {
+  return {
+    toast
+  };
+};

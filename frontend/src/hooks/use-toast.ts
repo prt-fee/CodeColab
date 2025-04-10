@@ -1,7 +1,12 @@
 
-import { useToast as useToastHook, toast as toastFunction } from "@/components/ui/use-toast";
+import { toast as toastFunction } from "@/components/ui/toast";
 
-export const useToast = useToastHook;
+export const useToast = () => {
+  return {
+    toast: toastFunction
+  };
+};
+
 export const toast = toastFunction;
 
 // Helper functions for consistent toast messages
