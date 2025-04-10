@@ -60,6 +60,9 @@ const Features = () => {
   const featureCardsRef = useRef([]);
 
   useEffect(() => {
+    // Clear the ref array to prevent stale references
+    featureCardsRef.current = featureCardsRef.current.slice(0, features.length);
+    
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && featureCardsRef.current.length > 0) {
@@ -91,19 +94,22 @@ const Features = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {features.map((feature, index) => (
-            <div
-              key={feature.title}
-              ref={(el) => el && (featureCardsRef.current[index] = el)}
-              className="bg-background rounded-xl p-6 border transition-all duration-300 hover:shadow-md hover:border-primary/20 opacity-0"
-            >
-              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary mb-4">
-                <feature.icon size={22} />
+          {features.map((feature, index) => {
+            const Icon = feature.icon;
+            return (
+              <div
+                key={feature.title}
+                ref={(el) => el && (featureCardsRef.current[index] = el)}
+                className="bg-background rounded-xl p-6 border transition-all duration-300 hover:shadow-md hover:border-primary/20 opacity-0"
+              >
+                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary mb-4">
+                  <Icon size={22} />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
+                <p className="text-muted-foreground">{feature.description}</p>
               </div>
-              <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-              <p className="text-muted-foreground">{feature.description}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>

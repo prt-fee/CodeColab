@@ -11,6 +11,9 @@ const ProjectHeader = ({
   onDeleteClick, 
   onTeamClick 
 }) => {
+  // Ensure we have a valid membersArray to work with
+  const safeMembers = Array.isArray(membersArray) ? membersArray : [];
+  
   return (
     <>
       <div className="flex justify-between items-center mb-6">
@@ -31,7 +34,7 @@ const ProjectHeader = ({
           <p className="text-muted-foreground">{project?.description || 'No description'}</p>
         </div>
         
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">
             <CalendarDays className="h-5 w-5 text-muted-foreground" />
             <span>Due: {formatDate(project?.dueDate)}</span>
@@ -41,17 +44,17 @@ const ProjectHeader = ({
             <Users className="h-4 w-4" />
             <span>Team</span>
             <div className="flex -space-x-2">
-              {membersArray.slice(0, 3).map((member, index) => (
+              {safeMembers.slice(0, 3).map((member, index) => (
                 <div 
-                  key={member.id || index} 
+                  key={member?.id || `member-${index}`} 
                   className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center border-2 border-background text-[10px]"
                 >
-                  {member.name ? member.name.charAt(0) : `U${index}`}
+                  {member?.name ? member.name.charAt(0) : `U${index}`}
                 </div>
               ))}
-              {membersArray.length > 3 && (
+              {safeMembers.length > 3 && (
                 <div className="flex items-center justify-center w-5 h-5 rounded-full bg-muted text-[10px] border-2 border-background">
-                  +{membersArray.length - 3}
+                  +{safeMembers.length - 3}
                 </div>
               )}
             </div>
