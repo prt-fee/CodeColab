@@ -9,12 +9,12 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === 'development' && componentTagger(),
   ].filter(Boolean),
+  root: './frontend',
   resolve: {
     alias: {
       '@': resolve(__dirname, './frontend/src'),
     },
   },
-  root: './frontend',
   server: {
     port: 8080,
     host: true,

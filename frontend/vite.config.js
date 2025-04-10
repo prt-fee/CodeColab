@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => ({
     open: true
   },
   build: {
-    outDir: 'dist',
+    outDir: '../dist',
     sourcemap: true,
     minify: 'terser',
     chunkSizeWarningLimit: 1000
