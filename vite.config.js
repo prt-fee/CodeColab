@@ -14,13 +14,14 @@ export default defineConfig(({ mode }) => ({
       '@': resolve(__dirname, './frontend/src'),
     },
   },
+  root: './frontend',
   server: {
     port: 8080,
-    host: "::",
+    host: true,
     open: true
   },
   build: {
-    outDir: 'dist',
+    outDir: '../dist',
     sourcemap: true,
     minify: 'terser',
     chunkSizeWarningLimit: 1000
