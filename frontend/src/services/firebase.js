@@ -1,91 +1,25 @@
+// This is a placeholder for Firebase initialization
+// In a real application, this would contain actual Firebase configuration and initialization
 
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-import { getAuth } from "firebase/auth";
-import { getDatabase } from "firebase/database";
-import { getStorage } from "firebase/storage";
+console.log('Firebase service initialized');
 
-// Firebase configuration
+// Placeholder for Firebase config
 const firebaseConfig = {
-  apiKey: "AIzaSyCEcXDRdwLijOZcqakGVELIaPhM55dsLAA",
-  authDomain: "code-collab-dedbb.firebaseapp.com",
-  databaseURL: "https://code-collab-dedbb-default-rtdb.firebaseio.com",
-  projectId: "code-collab-dedbb",
-  storageBucket: "code-collab-dedbb.appspot.com",
-  messagingSenderId: "239531618637",
-  appId: "1:239531618637:web:f24724b61e53a7048a8704",
-  measurementId: "G-3FPFPW0VZQ"
+  apiKey: "YOUR_API_KEY",
+  authDomain: "your-app.firebaseapp.com",
+  projectId: "your-project-id",
+  storageBucket: "your-app.appspot.com",
+  messagingSenderId: "your-messaging-sender-id",
+  appId: "your-app-id"
 };
 
-// Initialize Firebase - create a singleton to prevent multiple initializations
-let app, auth, database, storage, analytics;
+// Export firebase so it's available to the rest of the application
+export const firebaseApp = { 
+  auth: () => ({
+    signInWithEmailAndPassword: async () => {},
+    createUserWithEmailAndPassword: async () => {},
+    signOut: async () => {}
+  })
+};
 
-// Check if Firebase was already initialized
-if (!globalThis.firebaseInitialized) {
-  try {
-    console.log("Initializing Firebase...");
-    
-    // Initialize Firebase app - only once
-    app = initializeApp(firebaseConfig);
-    console.log("Firebase app initialized successfully");
-    
-    // Initialize Firebase services
-    auth = getAuth(app);
-    database = getDatabase(app);
-    storage = getStorage(app);
-    
-    // Only initialize analytics in browser environment
-    if (typeof window !== 'undefined') {
-      try {
-        analytics = getAnalytics(app);
-        console.log("Firebase analytics initialized successfully");
-      } catch (analyticsError) {
-        console.warn("Could not initialize Firebase analytics:", analyticsError);
-      }
-    } else {
-      console.log("Firebase initialized in server environment (without analytics)");
-    }
-    
-    // Set global flag to prevent re-initialization
-    globalThis.firebaseInitialized = true;
-  } catch (error) {
-    console.error("Error initializing Firebase:", error);
-    
-    // Create placeholders in case Firebase initialization fails
-    if (!app) app = { name: "firebase-app-placeholder" };
-    if (!auth) auth = { 
-      currentUser: null, 
-      onAuthStateChanged: (callback) => {
-        callback(null);
-        return () => {};
-      }, 
-      signInWithEmailAndPassword: () => Promise.reject(new Error("Auth not initialized")) 
-    };
-    if (!database) database = { 
-      ref: () => ({ 
-        set: () => Promise.reject(new Error("Database not initialized")),
-        on: () => {}, 
-        off: () => {} 
-      }) 
-    };
-    if (!storage) storage = {};
-    if (!analytics) analytics = { logEvent: () => {} };
-  }
-} else {
-  console.log("Firebase already initialized, reusing existing instance");
-  app = globalThis.firebaseApp;
-  auth = getAuth(app);
-  database = getDatabase(app);
-  storage = getStorage(app);
-  if (typeof window !== 'undefined') {
-    analytics = getAnalytics(app);
-  }
-}
-
-// Store the app instance globally for reuse
-if (app && !globalThis.firebaseApp) {
-  globalThis.firebaseApp = app;
-}
-
-// Export singleton instances
-export { app, auth, database, storage, analytics };
+export default firebaseApp;

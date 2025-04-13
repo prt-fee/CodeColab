@@ -1,6 +1,5 @@
 
 import React, { useRef, useEffect } from 'react';
-import { staggerAnimation } from '@/lib/animations';
 
 const testimonials = [
   {
@@ -31,7 +30,15 @@ const Testimonials = () => {
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && testimonialCardsRef.current.length > 0) {
-          staggerAnimation(testimonialCardsRef.current, 0.15, 0.6);
+          testimonialCardsRef.current.forEach((card, index) => {
+            if (!card) return;
+            
+            setTimeout(() => {
+              card.style.opacity = "1";
+              card.style.transform = "translateY(0)";
+            }, index * 200);
+          });
+          
           observer.disconnect();
         }
       },
@@ -46,51 +53,54 @@ const Testimonials = () => {
   }, []);
 
   return (
-    <section ref={sectionRef} className="py-20 bg-gradient-to-b from-background to-secondary/30">
-      <div className="container px-4 md:px-6 mx-auto">
-        <div className="text-center max-w-2xl mx-auto mb-12">
+    <section ref={sectionRef} className="py-20 bg-muted/20" id="testimonials">
+      <div className="container mx-auto px-4">
+        <div className="text-center max-w-3xl mx-auto mb-16">
           <p className="text-sm font-medium text-primary mb-2">Testimonials</p>
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Loved by teams worldwide
           </h2>
           <p className="text-lg text-muted-foreground">
-            Join thousands of satisfied teams who have enhanced their productivity.
+            Here's what our customers have to say about their experience with ProjectHub.
           </p>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {testimonials.map((testimonial, index) => (
             <div
-              key={index}
-              ref={(el) => el && (testimonialCardsRef.current[index] = el)}
-              className="bg-white rounded-xl p-6 shadow-sm border border-border opacity-0"
+              key={testimonial.author}
+              ref={el => testimonialCardsRef.current[index] = el}
+              className="bg-background p-6 rounded-lg border shadow-sm transition-all duration-500"
+              style={{
+                opacity: 0,
+                transform: "translateY(20px)"
+              }}
             >
-              <div className="flex flex-col h-full">
-                <div className="mb-6">
-                  <svg className="h-8 w-8 text-primary/30" fill="currentColor" viewBox="0 0 32 32">
-                    <path d="M9.352 4C4.456 7.456 1 13.12 1 19.36c0 5.088 3.072 8.064 6.624 8.064 3.36 0 5.856-2.688 5.856-5.856 0-3.168-2.208-5.472-5.088-5.472-.576 0-1.344.096-1.536.192.48-3.264 3.552-7.104 6.624-9.024L9.352 4zm16.512 0c-4.8 3.456-8.256 9.12-8.256 15.36 0 5.088 3.072 8.064 6.624 8.064 3.264 0 5.856-2.688 5.856-5.856 0-3.168-2.304-5.472-5.184-5.472-.576 0-1.248.096-1.44.192.48-3.264 3.456-7.104 6.528-9.024L25.864 4z" />
+              <div className="flex items-center mb-4">
+                <img
+                  src={testimonial.avatar}
+                  alt={testimonial.author}
+                  className="w-12 h-12 rounded-full mr-4"
+                />
+                <div>
+                  <h3 className="font-semibold text-base">{testimonial.author}</h3>
+                  <p className="text-sm text-muted-foreground">{testimonial.role}</p>
+                </div>
+              </div>
+              <blockquote className="italic text-muted-foreground">
+                "{testimonial.quote}"
+              </blockquote>
+              <div className="mt-4 flex items-center">
+                {[...Array(5)].map((_, i) => (
+                  <svg 
+                    key={i}
+                    xmlns="http://www.w3.org/2000/svg" 
+                    className="h-5 w-5 fill-primary" 
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                   </svg>
-                </div>
-
-                <p className="text-foreground mb-6 flex-grow">
-                  {testimonial.quote}
-                </p>
-
-                <div className="flex items-center">
-                  <img 
-                    src={testimonial.avatar} 
-                    alt={testimonial.author} 
-                    className="w-10 h-10 rounded-full mr-3 object-cover"
-                  />
-                  <div>
-                    <h4 className="font-medium text-foreground">
-                      {testimonial.author}
-                    </h4>
-                    <p className="text-sm text-muted-foreground">
-                      {testimonial.role}
-                    </p>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
           ))}

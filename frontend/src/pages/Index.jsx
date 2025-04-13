@@ -1,53 +1,23 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
-import Hero from '@/components/Hero';
-import Features from '@/components/Features';
-import Testimonials from '@/components/Testimonials';
-import Footer from '@/components/Footer';
-import NavBar from '@/components/NavBar';
-import { Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useAuth } from '../context/AuthContext';
+import Hero from '../components/Hero';
+import Features from '../components/Features';
+import Testimonials from '../components/Testimonials';
+import Footer from '../components/Footer';
+import NavBar from '../components/navbar';
 
 const Index = () => {
-  const { isAuthenticated, user, loading } = useAuth();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const [redirecting, setRedirecting] = useState(false);
-  const [contentVisible, setContentVisible] = useState(false);
-
-  // Add a small delay before showing content to prevent flicker
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setContentVisible(true);
-    }, 100);
-    
-    return () => clearTimeout(timer);
-  }, []);
 
   useEffect(() => {
     // If the user is already authenticated, redirect to dashboard
-    // But only after we've confirmed loading is complete
-    if (!loading && isAuthenticated && user && !redirecting) {
-      console.log("User is authenticated, redirecting to dashboard");
-      setRedirecting(true);
-      
-      // Short timeout to ensure smooth transition
-      const timer = setTimeout(() => {
-        navigate('/dashboard');
-      }, 300);
-      
-      return () => clearTimeout(timer);
+    if (isAuthenticated) {
+      navigate('/dashboard');
     }
-  }, [isAuthenticated, user, loading, navigate, redirecting]);
-
-  if (loading || redirecting || !contentVisible) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
-  }
+  }, [isAuthenticated, navigate]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -65,12 +35,12 @@ const Index = () => {
           <p className="text-primary-foreground/90 text-lg max-w-2xl mx-auto mb-8">
             Join thousands of teams that use ProjectHub to collaborate more effectively and deliver projects on time.
           </p>
-          <Button 
+          <button 
             onClick={() => navigate('/register')}
             className="bg-white text-primary font-medium px-6 py-3 rounded-lg hover:bg-primary-foreground/90 transition-colors"
           >
             Get Started Free
-          </Button>
+          </button>
         </div>
       </section>
       

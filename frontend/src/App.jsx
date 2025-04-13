@@ -1,12 +1,12 @@
 
-import React, { memo } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
-import { NotificationsProvider } from './context/NotificationsContext';
-import { Toaster } from './components/ui/toaster';
-import { Toaster as Sonner } from './components/ui/sonner';
-import { TooltipProvider } from './components/ui/tooltip';
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AuthProvider } from './context/AuthContext';
+import { ProjectProviderWrapper } from './components/ProjectProviderWrapper';
+import { Toaster } from "./components/ui/toaster";
+import { Toaster as Sonner } from "./components/ui/sonner";
+import { TooltipProvider } from "./components/ui/tooltip";
 
 // Import pages
 import Index from './pages/Index';
@@ -29,25 +29,22 @@ import Features from './pages/Features';
 // Import Firebase initialization to ensure it's loaded before AuthProvider
 import './services/firebase';
 
-// Create QueryClient outside component to prevent recreation on renders
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      refetchOnWindowFocus: false, // Prevent refetching when window regains focus
-      retry: 1, // Limit retries to reduce flickering
-      staleTime: 30000, // Use longer stale time (30s) to prevent frequent refetching
-      gcTime: 60000, // Keep cached data longer (1min)
+      refetchOnWindowFocus: false,
+      retry: 1,
+      staleTime: 30000,
     },
   },
 });
 
-// Use memo to prevent unnecessary re-renders
-const App = memo(function App() {
+const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router>
-        <AuthProvider>
-          <NotificationsProvider>
+      <ProjectProviderWrapper>
+        <BrowserRouter>
+          <AuthProvider>
             <TooltipProvider>
               <Routes>
                 <Route path="/" element={<Index />} />
@@ -67,15 +64,14 @@ const App = memo(function App() {
                 <Route path="/features" element={<Features />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
+              <Toaster />
+              <Sonner />
             </TooltipProvider>
-          </NotificationsProvider>
-        </AuthProvider>
-        {/* Move Toaster and Sonner outside of routing structure */}
-        <Toaster />
-        <Sonner />
-      </Router>
+          </AuthProvider>
+        </BrowserRouter>
+      </ProjectProviderWrapper>
     </QueryClientProvider>
   );
-});
+};
 
 export default App;

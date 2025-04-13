@@ -5,7 +5,6 @@ import {
   Users, BellRing, BarChart, 
   MessageSquare, Lock, Zap
 } from 'lucide-react';
-import { staggerAnimation } from '@/lib/animations';
 
 const features = [
   {
@@ -60,13 +59,17 @@ const Features = () => {
   const featureCardsRef = useRef([]);
 
   useEffect(() => {
-    // Clear the ref array to prevent stale references
-    featureCardsRef.current = featureCardsRef.current.slice(0, features.length);
-    
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && featureCardsRef.current.length > 0) {
-          staggerAnimation(featureCardsRef.current, 0.1, 0.5);
+          featureCardsRef.current.forEach((card, index) => {
+            setTimeout(() => {
+              if (card) {
+                card.style.opacity = "1";
+                card.style.transform = "translateY(0)";
+              }
+            }, index * 100);
+          });
           observer.disconnect();
         }
       },
@@ -99,8 +102,9 @@ const Features = () => {
             return (
               <div
                 key={feature.title}
-                ref={(el) => el && (featureCardsRef.current[index] = el)}
-                className="bg-background rounded-xl p-6 border transition-all duration-300 hover:shadow-md hover:border-primary/20 opacity-0"
+                ref={(el) => featureCardsRef.current[index] = el}
+                className="bg-background rounded-xl p-6 border transition-all duration-300 hover:shadow-md hover:border-primary/20"
+                style={{opacity: 0, transform: "translateY(20px)", transitionDelay: `${index * 50}ms`}}
               >
                 <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary mb-4">
                   <Icon size={22} />

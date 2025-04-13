@@ -2,8 +2,7 @@
 import React, { useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ChevronRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { textRevealAnimation, fadeInAnimation } from '@/lib/animations';
+import { Button } from './ui/button';
 
 const Hero = () => {
   const titleRef = useRef(null);
@@ -12,20 +11,37 @@ const Hero = () => {
   const imageRef = useRef(null);
 
   useEffect(() => {
+    // Simple fade-in animation
+    const fadeIn = (element, delay) => {
+      if (!element) return;
+      setTimeout(() => {
+        element.style.opacity = "1";
+        element.style.transform = "translateY(0)";
+      }, delay);
+    };
+    
     if (titleRef.current) {
-      textRevealAnimation(titleRef.current, 0.2, 1.2);
+      titleRef.current.style.opacity = "0";
+      titleRef.current.style.transform = "translateY(20px)";
+      fadeIn(titleRef.current, 200);
     }
     
     if (subtitleRef.current) {
-      fadeInAnimation(subtitleRef.current, 0.8, 0.8);
+      subtitleRef.current.style.opacity = "0";
+      subtitleRef.current.style.transform = "translateY(20px)";
+      fadeIn(subtitleRef.current, 500);
     }
     
     if (ctaRef.current) {
-      fadeInAnimation(ctaRef.current, 1.2, 0.8);
+      ctaRef.current.style.opacity = "0";
+      ctaRef.current.style.transform = "translateY(20px)";
+      fadeIn(ctaRef.current, 800);
     }
     
     if (imageRef.current) {
-      fadeInAnimation(imageRef.current, 0.5, 1);
+      imageRef.current.style.opacity = "0";
+      imageRef.current.style.transform = "translateY(20px)";
+      fadeIn(imageRef.current, 500);
     }
   }, []);
 
@@ -40,19 +56,19 @@ const Hero = () => {
           <div className="flex-1 text-center lg:text-left">
             <h1 
               ref={titleRef}
-              className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight tracking-tight mb-6"
+              className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight tracking-tight mb-6 transition-all duration-500"
             >
               Manage projects<br />with absolute <span className="text-primary">clarity</span>
             </h1>
             
             <p 
               ref={subtitleRef}
-              className="text-lg md:text-xl text-muted-foreground mb-8 max-w-xl mx-auto lg:mx-0"
+              className="text-lg md:text-xl text-muted-foreground mb-8 max-w-xl mx-auto lg:mx-0 transition-all duration-500"
             >
               A thoughtfully designed workspace for teams to collaborate, plan and track projects with precision and elegance.
             </p>
             
-            <div ref={ctaRef} className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+            <div ref={ctaRef} className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start transition-all duration-500">
               <Link to="/register">
                 <Button size="lg" className="font-medium w-full sm:w-auto">
                   Get started free
@@ -68,12 +84,12 @@ const Hero = () => {
             </div>
           </div>
           
-          <div ref={imageRef} className="flex-1 flex justify-center lg:justify-end w-full max-w-xl lg:max-w-none">
+          <div ref={imageRef} className="flex-1 flex justify-center lg:justify-end w-full max-w-xl lg:max-w-none transition-all duration-500">
             <div className="w-full relative">
               <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/30 to-accent rounded-2xl blur-lg opacity-30"></div>
               <div className="relative bg-white rounded-2xl overflow-hidden border shadow-xl">
                 <img 
-                  src="./PMD1.png" 
+                  src="https://cdn.pixabay.com/photo/2020/12/31/12/28/canva-5876229_1280.png" 
                   alt="Project Management Dashboard" 
                   className="w-full h-auto" 
                   loading="lazy"
