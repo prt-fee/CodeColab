@@ -9,22 +9,22 @@ import { TooltipProvider } from './components/ui/tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Import pages
-import Index from './pages/Index.jsx';
-import Dashboard from './pages/Dashboard.jsx';
-import Projects from './pages/Projects.jsx';
-import ProjectDetail from './pages/ProjectDetail.jsx';
-import Tasks from './pages/Tasks.jsx';
-import Login from './pages/Login.jsx';
-import Register from './pages/Register.jsx';
-import ForgotPassword from './pages/ForgotPassword.jsx';
-import Profile from './pages/Profile.jsx';
-import NotFound from './pages/NotFound.jsx';
-import ProjectUpload from './pages/ProjectUpload.jsx';
-import MeetingScheduler from './pages/MeetingScheduler.jsx';
-import Chat from './pages/Chat.jsx';
-import About from './pages/About.jsx';
-import Contact from './pages/Contact.jsx';
-import Features from './pages/Features.jsx';
+import Index from './pages/Index';
+import Dashboard from './pages/Dashboard';
+import Projects from './pages/Projects';
+import ProjectDetail from './pages/ProjectDetail';
+import Tasks from './pages/Tasks';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
+import Profile from './pages/Profile';
+import NotFound from './pages/NotFound';
+import ProjectUpload from './pages/ProjectUpload';
+import MeetingScheduler from './pages/MeetingScheduler';
+import Chat from './pages/Chat';
+import About from './pages/About';
+import Contact from './pages/Contact';
+import Features from './pages/Features';
 
 // Import Firebase initialization to ensure it's loaded before AuthProvider
 import './services/firebase';

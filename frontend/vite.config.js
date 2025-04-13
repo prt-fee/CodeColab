@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
     host: true,
     open: true,
-    allowedHosts: ['localhost', '*.lovableproject.com']
+    allowedHosts: ['localhost', '*.lovableproject.com', '*.lovable.app']
   },
   build: {
     outDir: '../dist',
